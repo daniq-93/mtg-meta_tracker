@@ -1,6 +1,0 @@
-Diagnóstico - 2026-10-14T20:49:28Z UTC
-1. add_repo: NO disponible (ToolSearch "add_repo" y "+repo add" sin coincidencias); el repo ya estaba clonado en /home/claude/mtg-meta_tracker (origin https://github.com/daniq-93/mtg-meta_tracker, HEAD separado -> se usó main @924405f)
-2. ToolSearch: cargadas SendUserMessage, mcp__Spellbinder__tournament_deck_search, mcp__Spellbinder__event_deck_get, mcp__Spellbinder__metagame_get; no cargadas: ninguna
-3. tournament_deck_search(standard, digital, 2026-10-13..2026-10-13, placing_at_most=1000, per_page=2): status ok, total=32 (Standard Challenge 32, mtgo)
-4. tools/RUN.md: existe; tools/COLLECT.md: existe; tools/pipeline.py: existe; python3 -I tools/pipeline.py --help: OK -> "usage: pipeline.py [-h] --raw RAW [--state STATE] [--out OUT] [--repo REPO]"
-5. Escrito checks/diag.txt, commit "Diagnóstico" y push a main

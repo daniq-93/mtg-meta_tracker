@@ -6,7 +6,8 @@ y el procesado en `tools/pipeline.py`. Habla y escribe en español.
 
 ## 0. Preparación
 - ToolSearch: `select:SendUserMessage,mcp__Spellbinder__tournament_deck_search,mcp__Spellbinder__event_deck_get,mcp__Spellbinder__metagame_get`
-- Estás dentro del clon del repositorio (`R`, ruta absoluta). Trabaja en `R/work` (está en `.gitignore`).
+- El clon del repositorio es `R` = `/home/claude/mtg-meta_tracker` (ya viene clonado en las tareas programadas). Antes de nada: `git -C R fetch origin main && git -C R checkout -B main origin/main`.
+- Trabaja en `R/work` (está en `.gitignore`).
 - Lee `R/tools/COLLECT.md` entero antes de empezar.
 
 ## 1. Fechas
