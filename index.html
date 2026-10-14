@@ -1,0 +1,513 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Meta Standard</title>
+<meta name="description" content="Meta de Magic: The Gathering Standard en papel y MTGO: cuotas, cruces, tendencias, tecnología y alertas.">
+<meta name="theme-color" content="#f3f4f1" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#151917" media="(prefers-color-scheme: dark)">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="icons/favicon.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Meta Standard">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: una columna estrecha tipo "hoja de torneo"; cabecera fija con filtros, pestañas, y filas densas de datos. */
+:root{
+  --bg:#f3f4f1; --surface:#fbfbf9; --sunk:#e7e9e4; --line:#d3d7cf;
+  --ink:#1c201e; --ink-2:#4b524e; --ink-3:#7a817c;
+  --accent:#2b5d7d; --accent-ink:#ffffff; --accent-soft:#dbe6ee;
+  --win:#2f7a5b; --loss:#b4523a; --warn:#a7761b;
+  --sev-high:#b4523a; --sev-med:#a7761b; --sev-low:#6f7d77;
+  --m-w:#efe6c4; --m-u:#3d79b3; --m-b:#3a3431; --m-r:#c4553b; --m-g:#3d8a59; --m-c:#a8aaa6;
+  --s1:#2b5d7d; --s2:#c4553b; --s3:#3d8a59; --s4:#8a5aa8; --s5:#a7761b; --s6:#4a9bb0;
+  --display:"Barlow Condensed","Arial Narrow",system-ui,sans-serif;
+  --body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#151917; --surface:#1c211f; --sunk:#232926; --line:#323a36;
+  --ink:#e7ebe8; --ink-2:#b0b8b3; --ink-3:#7f8883;
+  --accent:#7fb3d4; --accent-ink:#0f1a22; --accent-soft:#22343f;
+  --win:#5fb78f; --loss:#e07f66; --warn:#d6a44a;
+  --sev-high:#e07f66; --sev-med:#d6a44a; --sev-low:#8f9b96;
+  --m-w:#e9dfba; --m-u:#5d98cf; --m-b:#8b817c; --m-r:#e07158; --m-g:#5fae7c; --m-c:#8d908c;
+  --s1:#7fb3d4; --s2:#e07f66; --s3:#5fb78f; --s4:#b994d0; --s5:#d6a44a; --s6:#79c3d6;
+  color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#151917; --surface:#1c211f; --sunk:#232926; --line:#323a36;
+  --ink:#e7ebe8; --ink-2:#b0b8b3; --ink-3:#7f8883;
+  --accent:#7fb3d4; --accent-ink:#0f1a22; --accent-soft:#22343f;
+  --win:#5fb78f; --loss:#e07f66; --warn:#d6a44a;
+  --sev-high:#e07f66; --sev-med:#d6a44a; --sev-low:#8f9b96;
+  --m-w:#e9dfba; --m-u:#5d98cf; --m-b:#8b817c; --m-r:#e07158; --m-g:#5fae7c; --m-c:#8d908c;
+  --s1:#7fb3d4; --s2:#e07f66; --s3:#5fb78f; --s4:#b994d0; --s5:#d6a44a; --s6:#79c3d6;
+  color-scheme:dark}
+*{box-sizing:border-box}
+:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+body{margin:0}
+[hidden]{display:none!important}
+img{max-width:100%}
+html,body{background:var(--bg)}
+body{color:var(--ink);font-family:var(--body);font-size:14px;line-height:1.45}
+.wrap{max-width:860px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);border-bottom:1px solid var(--line)}
+.top .wrap{padding-block:12px 0;display:grid;gap:10px}
+.brand{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap}
+h1{font-family:var(--display);font-weight:700;font-size:26px;letter-spacing:.01em;margin:0;line-height:1;text-wrap:balance}
+h1 small{font-family:var(--body);font-weight:500;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3);margin-left:6px}
+.stamp{font-family:var(--mono);font-size:11px;color:var(--ink-3)}
+.filters{display:flex;gap:8px;flex-wrap:wrap}
+.seg{display:inline-flex;background:var(--sunk);border-radius:8px;padding:2px}
+.seg button{border:0;background:transparent;color:var(--ink-2);font:500 13px var(--body);padding:5px 10px;border-radius:6px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 2px rgb(0 0 0/.12)}
+nav.tabs{display:flex;gap:2px;overflow-x:auto;scrollbar-width:none;margin-bottom:-1px}
+nav.tabs::-webkit-scrollbar{display:none}
+nav.tabs a{flex:0 0 auto;font-family:var(--display);font-weight:600;font-size:16px;letter-spacing:.03em;text-transform:uppercase;color:var(--ink-3);text-decoration:none;padding:8px 10px 9px;border-bottom:2px solid transparent;display:inline-flex;gap:6px;align-items:center}
+nav.tabs a[aria-current="page"]{color:var(--ink);border-bottom-color:var(--accent)}
+.badge{font:600 11px var(--mono);background:var(--sev-high);color:var(--surface);border-radius:9px;padding:0 6px;line-height:17px}
+button:focus-visible,a:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+main .wrap{padding-block:16px 48px;display:grid;gap:22px}
+section{display:grid;gap:10px;min-width:0}
+h2{font-family:var(--display);font-weight:600;font-size:19px;letter-spacing:.02em;margin:0;text-transform:uppercase;text-wrap:balance}
+.sub{color:var(--ink-3);font-size:12.5px;margin:0;max-width:65ch}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.empty{border:1px dashed var(--line);border-radius:10px;padding:20px;color:var(--ink-2);background:var(--surface)}
+/* resumen */
+.kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 12px;min-width:0}
+.kpi b{display:block;font:500 20px var(--mono);font-variant-numeric:tabular-nums}
+.kpi span{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3)}
+@media (max-width:520px){.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
+/* filas del meta */
+.board{background:var(--surface);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.bhead,.row{display:grid;grid-template-columns:minmax(0,1fr) 64px 58px 74px;gap:8px;align-items:center;padding:8px 12px}
+.bhead{font-size:10.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-3);border-bottom:1px solid var(--line);background:var(--sunk)}
+.bhead span:not(:first-child),.row .c{text-align:right}
+.row{border-top:1px solid var(--line);cursor:pointer;width:100%;background:transparent;border-left:0;border-right:0;border-bottom:0;color:inherit;font:inherit;text-align:left}
+.board .row:first-of-type{border-top:0}
+.row:hover{background:var(--sunk)}
+.row[aria-expanded="true"]{background:var(--accent-soft)}
+.aname{display:flex;flex-direction:column;gap:4px;min-width:0}
+.aname strong{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bar{height:5px;border-radius:3px;background:var(--sunk);position:relative;overflow:hidden}
+.bar i{position:absolute;inset:0 auto 0 0;background:var(--accent);border-radius:3px}
+.pips{display:inline-flex;gap:2px;vertical-align:middle;margin-right:6px}
+.pip{width:10px;height:10px;border-radius:50%;border:1px solid rgb(0 0 0/.18);display:inline-block}
+.pip.W{background:var(--m-w)}.pip.U{background:var(--m-u)}.pip.B{background:var(--m-b)}.pip.R{background:var(--m-r)}.pip.G{background:var(--m-g)}.pip.C{background:var(--m-c)}
+.delta{font:500 11px var(--mono);font-variant-numeric:tabular-nums;color:var(--ink-3)}
+.delta.up{color:var(--win)}.delta.down{color:var(--loss)}
+.wr{font:500 13px var(--mono);font-variant-numeric:tabular-nums}
+.wr small{display:block;font-size:10.5px;color:var(--ink-3)}
+.wr.hi{color:var(--win)}.wr.lo{color:var(--loss)}
+.detail{border-top:1px solid var(--line);padding:12px;display:grid;gap:12px;background:var(--surface)}
+.detail h3{font:600 11px var(--body);letter-spacing:.07em;text-transform:uppercase;color:var(--ink-3);margin:0}
+.dgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}
+.mlist{display:grid;gap:3px;font-size:13px}
+.mlist div{display:flex;justify-content:space-between;gap:8px}
+.linkbtn{background:none;border:0;color:var(--accent);font:500 13px var(--body);padding:0;cursor:pointer;text-decoration:underline;text-underline-offset:2px}
+a{color:var(--accent)}
+.more{justify-self:start}
+/* matriz */
+.mx-scroll{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
+table.mx{border-collapse:separate;border-spacing:2px;font-size:12px;margin:6px}
+.mx th{font-weight:500;color:var(--ink-2);font-size:11px;padding:2px 4px;white-space:nowrap}
+.mx thead th{writing-mode:vertical-rl;transform:rotate(180deg);height:118px;text-align:left;vertical-align:bottom}
+.mx tbody th{text-align:right;max-width:150px;overflow:hidden;text-overflow:ellipsis}
+.mx td{width:44px;min-width:44px;height:38px;text-align:center;border-radius:5px;font-family:var(--mono);font-variant-numeric:tabular-nums;line-height:1.05;position:relative}
+.mx td small{display:block;font-size:9.5px;opacity:.75}
+.mx td.mirror{background:var(--sunk);color:var(--ink-3)}
+.mx td.none{background:transparent;color:var(--ink-3);border:1px dashed var(--line)}
+.legend{display:flex;gap:12px;flex-wrap:wrap;font-size:12px;color:var(--ink-2);align-items:center}
+.lgrad{width:120px;height:8px;border-radius:4px;background:linear-gradient(90deg,var(--loss),var(--sunk),var(--win))}
+/* tendencias */
+.chart{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 10px 4px}
+.chart svg{width:100%;height:auto;display:block}
+.chart text{fill:var(--ink-3);font-family:var(--mono);font-size:10px}
+.keys{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12.5px;padding:4px 4px 8px}
+.keys span{display:inline-flex;align-items:center;gap:6px}
+.keys i{width:14px;height:3px;border-radius:2px;display:inline-block}
+.movers{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media (max-width:520px){.movers{grid-template-columns:1fr}}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px;display:grid;gap:6px;min-width:0}
+.card h3{margin:0;font:600 11px var(--body);letter-spacing:.07em;text-transform:uppercase;color:var(--ink-3)}
+/* tecnología */
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{border:1px solid var(--line);background:var(--surface);color:var(--ink-2);border-radius:999px;padding:4px 10px;font:500 12.5px var(--body);cursor:pointer;display:inline-flex;align-items:center}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.chip .pips{margin-right:5px}
+.ctable{width:100%;border-collapse:collapse;font-size:13px}
+.ctable th{font:500 10.5px var(--body);letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);text-align:right;padding:4px 6px;border-bottom:1px solid var(--line)}
+.ctable th:first-child,.ctable td:first-child{text-align:left}
+.ctable td{padding:5px 6px;border-bottom:1px solid var(--line);text-align:right;font-family:var(--mono);font-variant-numeric:tabular-nums;font-size:12px}
+.ctable td:first-child{font-family:var(--body);font-size:13px}
+.ctable tr:last-child td{border-bottom:0}
+.tag{font:600 10px var(--body);letter-spacing:.06em;text-transform:uppercase;border-radius:4px;padding:1px 5px;margin-left:6px;vertical-align:1px}
+.tag.new{background:var(--accent);color:var(--accent-ink)}
+.tag.side{background:var(--sunk);color:var(--ink-2)}
+/* alertas */
+.alist{display:grid;gap:8px}
+.alert{background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--sev-low);border-radius:10px;padding:10px 12px;display:grid;gap:4px}
+.alert.high{border-left-color:var(--sev-high)}.alert.med{border-left-color:var(--sev-med)}
+.alert .meta{display:flex;gap:8px;flex-wrap:wrap;align-items:center;font-size:11.5px;color:var(--ink-3)}
+.alert .title{font-weight:600}
+.alert .det{color:var(--ink-2);font-size:13px}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--accent);display:inline-block}
+.kind{font:600 10.5px var(--body);letter-spacing:.06em;text-transform:uppercase}
+.events{display:grid;gap:0;background:var(--surface);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.events div{display:grid;grid-template-columns:78px minmax(0,1fr) auto;gap:10px;padding:7px 12px;border-top:1px solid var(--line);font-size:13px;align-items:baseline}
+.events div:first-child{border-top:0}
+.events .ename{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.foot{color:var(--ink-3);font-size:12px;max-width:70ch}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+.install{display:flex;gap:10px;align-items:center;justify-content:space-between;background:var(--accent-soft);border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-size:13px}
+.install button{flex:0 0 auto}
+.btn{border:0;background:var(--accent);color:var(--accent-ink);font:600 13px var(--body);padding:6px 12px;border-radius:7px;cursor:pointer}
+.xbtn{border:0;background:none;color:var(--ink-3);font:500 18px var(--body);cursor:pointer;padding:0 4px}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <div class="brand">
+      <h1>Meta Standard <small>grupo de testeo</small></h1>
+      <span class="stamp" id="stamp">Cargando datos…</span>
+    </div>
+    <div class="filters">
+      <div class="seg" role="group" aria-label="Canal" id="f-ch">
+        <button id="ch-all" data-v="all" aria-pressed="true">Papel + MTGO</button>
+        <button id="ch-paper" data-v="paper" aria-pressed="false">Papel</button>
+        <button id="ch-mtgo" data-v="mtgo" aria-pressed="false">MTGO</button>
+      </div>
+      <div class="seg" role="group" aria-label="Periodo" id="f-win">
+        <button id="w-7" data-v="7" aria-pressed="false">7 días</button>
+        <button id="w-14" data-v="14" aria-pressed="true">14 días</button>
+        <button id="w-30" data-v="30" aria-pressed="false">30 días</button>
+      </div>
+    </div>
+    <nav class="tabs" aria-label="Secciones">
+      <a href="#meta" data-tab="meta" aria-current="page">Meta</a>
+      <a href="#cruces" data-tab="cruces">Cruces</a>
+      <a href="#tendencias" data-tab="tendencias">Tendencias</a>
+      <a href="#tecnologia" data-tab="tecnologia">Tecnología</a>
+      <a href="#alertas" data-tab="alertas">Alertas <span class="badge" id="abadge" hidden>0</span></a>
+    </nav>
+  </div>
+</header>
+<main><div class="wrap" id="view">
+  <div class="empty">Cargando el histórico de torneos…</div>
+</div></main>
+
+<script>
+(function(){
+"use strict";
+const S={ch:"all",win:14,tab:"meta",open:null,showAll:false,techArch:null,afilter:"all"};
+const D={days:{},cards:{},archIdx:{},cardIdx:{},matrix:null,status:null,alerts:[],ready:false,cardsReady:false};
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const LS={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+
+/* ---------- fechas ---------- */
+const addDays=(s,n)=>{const d=new Date(s+"T12:00:00Z");d.setUTCDate(d.getUTCDate()+n);return d.toISOString().slice(0,10)};
+const range=(end,n)=>{const a=[];for(let i=n-1;i>=0;i--)a.push(addDays(end,-i));return a};
+const fmtDate=s=>{if(!s)return"";const[y,m,d]=s.split("-");return `${+d} ${["ene","feb","mar","abr","may","jun","jul","ago","sep","oct","nov","dic"][+m-1]}`};
+function latest(){const ks=Object.keys(D.days).sort();return D.status?.through||ks[ks.length-1]||new Date().toISOString().slice(0,10)}
+const chans=()=>S.ch==="all"?["mtgo","paper"]:[S.ch];
+const chLabel=c=>c==="mtgo"?"MTGO":"Papel";
+
+/* ---------- colores de arquetipo ---------- */
+const GUILD={azorius:"WU",dimir:"UB",rakdos:"BR",gruul:"RG",selesnya:"GW",orzhov:"WB",izzet:"UR",golgari:"BG",boros:"RW",simic:"GU",esper:"WUB",grixis:"UBR",jund:"BRG",naya:"RGW",bant:"GWU",abzan:"WBG",jeskai:"URW",sultai:"BGU",mardu:"RWB",temur:"GUR","mono-white":"W","mono-blue":"U","mono-black":"B","mono-red":"R","mono-green":"G","four-color":"WUBR","4c":"WUBR","five-color":"WUBRG","domain":"WUBRG"};
+function colorsOf(s){
+  const m=D.matrix?.colors?.[s]; if(m&&m.length) return m;
+  if(/^[wubrg]{1,5}$/.test(s)) return s.toUpperCase().split("");
+  for(const k of Object.keys(GUILD).sort((a,b)=>b.length-a.length)) if(s.startsWith(k)) return GUILD[k].split("");
+  return [];
+}
+const order="WUBRG";
+const pips=s=>{const c=colorsOf(s).slice().sort((a,b)=>order.indexOf(a)-order.indexOf(b));return c.length?`<span class="pips" aria-hidden="true">${c.map(x=>`<i class="pip ${x}"></i>`).join("")}</span>`:""};
+const nameOf=s=>{if(s==="other")return"Otros";const a=D.archIdx[s];if(a?.n)return a.n;for(const ds of Object.keys(D.days)){const n=D.days[ds].names?.[s];if(n)return n}return s};
+
+/* ---------- agregados ---------- */
+function agg(dates,chs){
+  const r={tot:0,w:0,l:0,a:{}};
+  for(const ds of dates){const doc=D.days[ds];if(!doc)continue;
+    for(const ch of chs){const m=doc.a?.[ch];if(!m)continue;
+      for(const [s,c] of Object.entries(m)){const e=r.a[s]||(r.a[s]={d:0,w:0,l:0,dr:0,t8:0,win:0});
+        e.d+=c[0];e.w+=c[1];e.l+=c[2];e.dr+=c[3];e.t8+=c[4];e.win+=c[5];r.tot+=c[0];}}}
+  return r;
+}
+function wilson(w,n){if(!n)return null;const z=1.96,p=w/n,den=1+z*z/n,c=(p+z*z/(2*n))/den,h=z*Math.sqrt(p*(1-p)/n+z*z/(4*n*n))/den;return{p,lo:c-h,hi:c+h}}
+function cardAgg(dates,arch,chs){
+  const out={n:0,c:{}};
+  for(const ds of dates){const doc=D.cards[ds];if(!doc)continue;
+    for(const ch of chs){const node=doc.l?.[ch]?.[arch];if(!node)continue;out.n+=node.n;
+      for(const [card,v] of Object.entries(node.c)){const e=out.c[card]||(out.c[card]=[0,0,0,0]);for(let i=0;i<4;i++)e[i]+=v[i];}}}
+  return out;
+}
+function topLists(arch,dates,chs){const res=[];for(const ds of dates.slice().reverse()){const doc=D.cards[ds];if(!doc)continue;for(const t of doc.top||[])if(t.a===arch&&chs.includes(t.ch))res.push({...t,date:ds});}return res}
+
+/* ---------- vistas ---------- */
+function pct(x,dig=1){return (100*x).toFixed(dig)}
+function deltaHtml(pp){if(pp==null||!isFinite(pp))return`<span class="delta">nuevo</span>`;const r=Math.round(pp*10)/10;if(Math.abs(r)<0.1)return`<span class="delta">= 0,0</span>`;return`<span class="delta ${r>0?"up":"down"}">${r>0?"▲":"▼"} ${Math.abs(r).toFixed(1).replace(".",",")}</span>`}
+const fmt=x=>String(x).replace(".",",");
+
+function viewMeta(){
+  const end=latest(),cur=range(end,S.win),prev=range(addDays(end,-S.win),S.win),chs=chans();
+  const A=agg(cur,chs),P=agg(prev,chs);
+  if(!A.tot) return emptyBlock("No hay torneos de este canal en el periodo elegido. Prueba con 30 días o con los dos canales.");
+  const rows=Object.entries(A.a).map(([s,e])=>{const sh=e.d/A.tot,ps=P.tot&&P.a[s]?P.a[s].d/P.tot:(P.tot?0:null);return{s,e,sh,dpp:ps==null?null:100*(sh-ps)}}).sort((a,b)=>b.e.d-a.e.d);
+  const maxSh=rows[0]?.sh||1;
+  const evs=[];for(const ds of cur){const doc=D.days[ds];if(!doc)continue;for(const ev of doc.ev||[])if(chs.includes(ev.ch))evs.push({...ev,date:ds})}
+  evs.sort((a,b)=>b.date.localeCompare(a.date));
+  const lists=cur.reduce((n,ds)=>{const doc=D.cards[ds];if(!doc)return n;for(const ch of chs)for(const v of Object.values(doc.l?.[ch]||{}))n+=v.n;return n},0);
+  const shown=S.showAll?rows:rows.filter((r,i)=>i<15||r.sh>=0.01);
+  const rowsHtml=shown.map(r=>{const wr=wilson(r.e.w,r.e.w+r.e.l);const cls=wr&&(r.e.w+r.e.l)>=20?(wr.lo>0.5?"hi":wr.hi<0.5?"lo":""):"";
+    const open=S.open===r.s;
+    return `<button class="row" id="row-${esc(r.s)}" data-arch="${esc(r.s)}" aria-expanded="${open}">
+      <span class="aname"><strong>${pips(r.s)}${esc(nameOf(r.s))}</strong><span class="bar"><i style="width:${(100*r.sh/maxSh).toFixed(1)}%"></i></span></span>
+      <span class="c"><span class="num">${fmt(pct(r.sh))}%</span><br>${deltaHtml(r.dpp)}</span>
+      <span class="c num">${r.e.t8}</span>
+      <span class="c wr ${cls}">${wr?fmt(pct(wr.p,0))+"%":"—"}<small>${r.e.w+r.e.l} part.</small></span>
+    </button>${open?detailHtml(r.s,cur,chs,A):""}`}).join("");
+  return `
+  <section>
+    <div class="kpis">
+      <div class="kpi"><b>${evs.length}</b><span>Torneos</span></div>
+      <div class="kpi"><b>${A.tot}</b><span>Decks</span></div>
+      <div class="kpi"><b>${rows.length}</b><span>Arquetipos</span></div>
+      <div class="kpi"><b>${lists}</b><span>Listas top 8</span></div>
+    </div>
+  </section>
+  <section>
+    <h2>Meta actual</h2>
+    <p class="sub">Últimos ${S.win} días hasta el ${fmtDate(end)} · ${S.ch==="all"?"papel y MTGO":chLabel(S.ch)}. La flecha compara con los ${S.win} días anteriores, en puntos. El % de victoria sale de los récords de cada deck contra todo el campo; en verde o rojo solo si la diferencia con el 50% es clara.</p>
+    <div class="board" role="list">
+      <div class="bhead"><span>Arquetipo</span><span>Cuota</span><span>Top 8</span><span>Victoria</span></div>
+      ${rowsHtml}
+    </div>
+    ${rows.length>shown.length||S.showAll?`<button class="linkbtn more" id="toggle-all">${S.showAll?"Ver solo los principales":`Ver los ${rows.length} arquetipos`}</button>`:""}
+  </section>
+  <section>
+    <h2>Torneos del periodo</h2>
+    <div class="events">${evs.slice(0,40).map(ev=>`<div><span class="num stamp">${fmtDate(ev.date)} · ${ev.ch==="mtgo"?"MTGO":"Papel"}</span><span class="ename">${esc(ev.n)} <span class="stamp">${ev.d} decks</span></span><span>${ev.w?pips(ev.w)+esc(nameOf(ev.w)):"<span class='stamp'>sin ganador</span>"}</span></div>`).join("")||"<div><span></span><span>Sin torneos.</span><span></span></div>"}</div>
+  </section>`;
+}
+
+function detailHtml(s,cur,chs,A){
+  const e=A.a[s];
+  // serie diaria de cuota (media móvil 7 días) en los últimos 28
+  const end=latest(),days=range(end,28);
+  const series=days.map(ds=>{const g=agg(range(ds,7),chs);return g.tot?100*(g.a[s]?.d||0)/g.tot:null});
+  const mx=D.matrix,mrow=mx?mx.cells.filter(c=>c[0]===s&&c[1]!==s&&(c[2]+c[3])>0):[];
+  const mHtml=mrow.length?`<div class="mlist">${mrow.sort((a,b)=>(b[2]+b[3])-(a[2]+a[3])).map(c=>{const n=c[2]+c[3],p=c[2]/n;return`<div><span>${pips(c[1])}${esc(nameOf(c[1]))}</span><span class="num ${n>=8?(p>=.55?"wr hi":p<=.45?"wr lo":""):""}">${fmt(pct(p,0))}% <span class="stamp">${c[2]}-${c[3]}</span></span></div>`}).join("")}</div>`:`<p class="sub">Sin cruces de papel registrados para este arquetipo en los últimos ${mx?.days||30} días.</p>`;
+  const tl=topLists(s,range(end,30),chs).slice(0,6);
+  return `<div class="detail">
+    <div class="dgrid">
+      <div><h3>Cuota, media de 7 días</h3>${spark(series)}<p class="sub">${e.d} decks · ${e.t8} top 8 · ${e.win} ${e.win===1?"torneo ganado":"torneos ganados"} · récord ${e.w}-${e.l}${e.dr?"-"+e.dr:""}</p></div>
+      <div><h3>Cruces en papel</h3>${mHtml}</div>
+    </div>
+    <div><h3>Últimas listas en top 8</h3>${tl.length?`<div class="mlist">${tl.map(t=>`<div><a href="https://www.spellbinder.gg/decks/${esc(t.u)}" target="_blank" rel="noopener">${esc(t.e)}</a><span class="num stamp">${fmtDate(t.date)} · ${t.p}º · ${esc(t.r)}</span></div>`).join("")}</div>`:`<p class="sub">Ninguna lista de top 8 en los últimos 30 días.</p>`}</div>
+    <div><button class="linkbtn" data-goto-tech="${esc(s)}">Ver su tecnología →</button></div>
+  </div>`;
+}
+
+function spark(vals){
+  const W=260,H=54,pad=4,pts=vals.map((v,i)=>v==null?null:[i,v]).filter(Boolean);
+  if(pts.length<2) return `<p class="sub">Aún no hay histórico suficiente.</p>`;
+  const max=Math.max(...pts.map(p=>p[1]),1),x=i=>pad+i*(W-2*pad)/(vals.length-1),y=v=>H-pad-(v/max)*(H-2*pad);
+  const d=pts.map((p,k)=>`${k?"L":"M"}${x(p[0]).toFixed(1)},${y(p[1]).toFixed(1)}`).join(" ");
+  const last=pts[pts.length-1];
+  return `<svg viewBox="0 0 ${W} ${H}" width="100%" style="max-width:${W}px;display:block" role="img" aria-label="Evolución de la cuota">
+    <path d="${d} L${x(last[0]).toFixed(1)},${H-pad} L${x(pts[0][0]).toFixed(1)},${H-pad}Z" fill="var(--accent-soft)" stroke="none"></path>
+    <path d="${d}" fill="none" stroke="var(--accent)" stroke-width="1.8"></path>
+    <circle cx="${x(last[0]).toFixed(1)}" cy="${y(last[1]).toFixed(1)}" r="3" fill="var(--accent)"></circle>
+    <text x="${W-pad}" y="11" text-anchor="end" style="fill:var(--ink-3);font:10px var(--mono)">${fmt(last[1].toFixed(1))}%</text>
+  </svg>`;
+}
+
+function viewCruces(){
+  const mx=D.matrix;
+  if(!mx||!mx.archs?.length) return emptyBlock("Todavía no hay matriz de cruces. Se rellena con la actualización diaria.");
+  const ord=mx.archs.map(a=>a.s),cell={};for(const c of mx.cells)cell[c[0]+"|"+c[1]]=c;
+  const bg=(p,n)=>{const t=Math.max(0,Math.min(1,Math.abs(p-.5)*2.2)),a=Math.min(1,.25+n/14);const col=p>=.5?"var(--win)":"var(--loss)";return`background:color-mix(in srgb, ${col} ${Math.round(100*t*a)}%, var(--sunk))`};
+  const head=ord.map(s=>`<th scope="col">${esc(nameOf(s))}</th>`).join("");
+  const body=ord.map(r=>`<tr><th scope="row">${pips(r)}${esc(nameOf(r))}</th>${ord.map(k=>{const c=cell[r+"|"+k];if(r===k)return`<td class="mirror">=</td>`;if(!c||c[2]+c[3]===0)return`<td class="none">·</td>`;const n=c[2]+c[3],p=c[2]/n;return`<td style="${bg(p,n)}" title="${esc(nameOf(r))} contra ${esc(nameOf(k))}: ${c[2]}-${c[3]}">${Math.round(100*p)}<small>${n}</small></td>`}).join("")}</tr>`).join("");
+  return `<section>
+    <h2>Cruces en papel</h2>
+    <p class="sub">% de partidas ganadas por el arquetipo de la fila contra el de la columna, y número de partidas debajo. Datos de torneos presenciales del ${fmtDate(mx.from)} al ${fmtDate(mx.to)} (${mx.matches} partidas). MTGO no publica emparejamientos, así que esta tabla no cambia con el filtro de canal. Con menos de 10 partidas el color se aclara: tómalo como indicio, no como dato.</p>
+    <div class="legend"><span>Pierde</span><span class="lgrad"></span><span>Gana</span></div>
+    <div class="mx-scroll"><table class="mx"><thead><tr><th></th>${head}</tr></thead><tbody>${body}</tbody></table></div>
+  </section>`;
+}
+
+function viewTendencias(){
+  const end=latest(),chs=chans(),N=Math.max(28,S.win),days=range(end,N);
+  const cur=agg(range(end,S.win),chs);
+  if(!cur.tot) return emptyBlock("No hay datos de este canal en el periodo elegido.");
+  const top=Object.entries(cur.a).filter(([s])=>s!=="unknown").sort((a,b)=>b[1].d-a[1].d).slice(0,6).map(x=>x[0]);
+  const series=top.map(s=>days.map(ds=>{const g=agg(range(ds,7),chs);return g.tot?100*(g.a[s]?.d||0)/g.tot:null}));
+  const W=640,H=260,L=34,R=10,T=10,B=24,max=Math.ceil(Math.max(5,...series.flat().filter(v=>v!=null))/5)*5;
+  const x=i=>L+i*(W-L-R)/(days.length-1),y=v=>T+(H-T-B)*(1-v/max);
+  let grid="";for(let v=0;v<=max;v+=max<=20?5:10){grid+=`<line x1="${L}" x2="${W-R}" y1="${y(v)}" y2="${y(v)}" stroke="var(--line)" stroke-width="1"></line><text x="${L-6}" y="${y(v)+3}" text-anchor="end">${v}%</text>`}
+  const ticks=[0,Math.floor((days.length-1)/2),days.length-1].map(i=>`<text x="${x(i)}" y="${H-6}" text-anchor="${i===0?"start":i===days.length-1?"end":"middle"}">${fmtDate(days[i])}</text>`).join("");
+  const lines=series.map((ser,k)=>{const pts=ser.map((v,i)=>v==null?null:[x(i),y(v)]).filter(Boolean);if(pts.length<2)return"";const d=pts.map((p,j)=>`${j?"L":"M"}${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(" ");const lp=pts[pts.length-1];return`<path d="${d}" fill="none" stroke="var(--s${k+1})" stroke-width="2" stroke-linejoin="round"></path><circle cx="${lp[0].toFixed(1)}" cy="${lp[1].toFixed(1)}" r="3.2" fill="var(--s${k+1})"></circle>`}).join("");
+  // suben / bajan: últimos 7 frente a 7 anteriores
+  const a7=agg(range(end,7),chs),p7=agg(range(addDays(end,-7),7),chs);
+  const mv=Object.keys({...a7.a,...p7.a}).filter(s=>s!=="unknown").map(s=>{const n1=a7.a[s]?.d||0,n0=p7.a[s]?.d||0;return{s,d:(a7.tot?100*n1/a7.tot:0)-(p7.tot?100*n0/p7.tot:0),n:Math.max(n1,n0)}}).filter(m=>m.n>=3);
+  const up=mv.filter(m=>m.d>0).sort((a,b)=>b.d-a.d).slice(0,6),dn=mv.filter(m=>m.d<0).sort((a,b)=>a.d-b.d).slice(0,6);
+  const li=m=>`<div class="mlist"><div><span>${pips(m.s)}${esc(nameOf(m.s))}</span>${deltaHtml(m.d)}</div></div>`;
+  return `<section>
+    <h2>Evolución de la cuota</h2>
+    <p class="sub">Media móvil de 7 días de los ${top.length} arquetipos más jugados ahora · ${S.ch==="all"?"papel y MTGO":chLabel(S.ch)}.</p>
+    <div class="chart"><div class="keys">${top.map((s,k)=>`<span><i style="background:var(--s${k+1})"></i>${esc(nameOf(s))}</span>`).join("")}</div>
+      <svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Evolución de la cuota de los arquetipos principales">${grid}${ticks}${lines}</svg></div>
+  </section>
+  <section>
+    <h2>Esta semana frente a la anterior</h2>
+    <p class="sub">Cambio de cuota en puntos entre los últimos 7 días y los 7 anteriores (${a7.tot} y ${p7.tot} decks).</p>
+    <div class="movers">
+      <div class="card"><h3>Suben</h3>${up.map(li).join("")||"<p class='sub'>Nada destacable.</p>"}</div>
+      <div class="card"><h3>Bajan</h3>${dn.map(li).join("")||"<p class='sub'>Nada destacable.</p>"}</div>
+    </div>
+  </section>`;
+}
+
+function viewTecnologia(){
+  const end=latest(),chs=chans(),cur=range(end,S.win),base=range(addDays(end,-S.win),28);
+  // arquetipos con listas en el periodo
+  const counts={};for(const ds of cur){const doc=D.cards[ds];if(!doc)continue;for(const ch of chs)for(const [s,v] of Object.entries(doc.l?.[ch]||{}))counts[s]=(counts[s]||0)+v.n}
+  const archs=Object.entries(counts).sort((a,b)=>b[1]-a[1]).map(x=>x[0]);
+  if(!archs.length) return emptyBlock(D.cardsReady?"No hay listas de top 8 en este periodo y canal.":"Cargando las listas de top 8…");
+  if(!S.techArch||!counts[S.techArch]) S.techArch=archs[0];
+  const s=S.techArch,R=cardAgg(cur,s,chs),Bs=cardAgg(base,s,chs);
+  const rows=Object.keys({...R.c,...Bs.c}).map(card=>{const r=R.c[card]||[0,0,0,0],b=Bs.c[card]||[0,0,0,0];
+    return{card,rm:R.n?r[0]/R.n:0,rs:R.n?r[2]/R.n:0,rc:r[0]?r[1]/r[0]:0,rsc:r[2]?r[3]/r[2]:0,bm:Bs.n?b[0]/Bs.n:0,bs:Bs.n?b[2]/Bs.n:0,inR:r[0]+r[2]>0,inB:b[0]+b[2]>0}});
+  const enough=Bs.n>=3;
+  const nuevas=enough?rows.filter(x=>x.inR&&!x.inB&&!isBasic(x.card)).sort((a,b)=>(b.rm+b.rs)-(a.rm+a.rs)):[];
+  const ganan=enough?rows.filter(x=>x.inR&&x.inB&&((x.rm-x.bm)>=.2||(x.rs-x.bs)>=.2)).sort((a,b)=>Math.max(b.rm-b.bm,b.rs-b.bs)-Math.max(a.rm-a.bm,a.rs-a.bs)):[];
+  const pierden=enough?rows.filter(x=>x.inB&&((x.bm-x.rm)>=.2||(x.bs-x.rs)>=.2)&&!isBasic(x.card)).sort((a,b)=>Math.max(b.bm-b.rm,b.bs-b.rs)-Math.max(a.bm-a.rm,a.bs-a.rs)):[];
+  const core=rows.filter(x=>x.rm>=.75).sort((a,b)=>b.rm-a.rm||b.rc-a.rc);
+  const tbl=(list,mode)=>list.length?`<table class="ctable"><thead><tr><th>Carta</th><th>Main ahora</th><th>Side ahora</th><th>Antes</th></tr></thead><tbody>${list.slice(0,20).map(x=>`<tr><td>${esc(x.card)}${mode==="new"&&isNewInFormat(x.card,cur)?'<span class="tag new">nueva en el formato</span>':""}</td><td>${x.rm?fmt(pct(x.rm,0))+"% <span class='stamp'>×"+fmt(x.rc.toFixed(1))+"</span>":"—"}</td><td>${x.rs?fmt(pct(x.rs,0))+"%":"—"}</td><td>${x.bm||x.bs?(x.bm?fmt(pct(x.bm,0))+"% main":"")+(x.bm&&x.bs?" · ":"")+(x.bs?fmt(pct(x.bs,0))+"% side":""):"—"}</td></tr>`).join("")}</tbody></table>`:`<p class="sub">Nada en este apartado.</p>`;
+  const fresh=newInFormat(cur,chs);
+  return `<section>
+    <h2>Tecnología por arquetipo</h2>
+    <p class="sub">Compara las listas de top 8 de los últimos ${S.win} días con las de los 28 días anteriores. Los % son la parte de listas que juegan la carta; ×N es la media de copias en el main.</p>
+    <div class="chips" role="group" aria-label="Arquetipo">${archs.slice(0,18).map(a=>`<button class="chip" id="ta-${esc(a)}" data-tech="${esc(a)}" aria-pressed="${a===s}">${pips(a)}${esc(nameOf(a))} <span class="stamp">&nbsp;${counts[a]}</span></button>`).join("")}</div>
+    <p class="sub"><strong>${esc(nameOf(s))}</strong>: ${R.n} listas ahora · ${Bs.n} en la base de comparación.${enough?"":" Con menos de 3 listas de base no se puede saber qué es nuevo; se muestra solo el núcleo."}</p>
+  </section>
+  ${enough?`<section><div class="card"><h3>Cartas nuevas en el arquetipo</h3>${tbl(nuevas,"new")}</div></section>
+  <section><div class="movers"><div class="card"><h3>Ganan peso</h3>${tbl(ganan)}</div><div class="card"><h3>Pierden peso</h3>${tbl(pierden)}</div></div></section>`:""}
+  <section><div class="card"><h3>Núcleo del deck (en el main de ≥75% de las listas)</h3>${tbl(core)}</div></section>
+  <section>
+    <h2>Cartas nuevas en el formato</h2>
+    <p class="sub">Primera aparición registrada en una lista de top 8 dentro del periodo. El seguimiento empezó el ${fmtDate(D.status?.since)}; antes del ${fmtDate(D.status?.baseline_until)} todo contaba como base.</p>
+    <div class="card">${fresh.length?`<table class="ctable"><thead><tr><th>Carta</th><th>Desde</th><th>Arquetipos</th></tr></thead><tbody>${fresh.map(f=>`<tr><td>${esc(f.card)}</td><td>${fmtDate(f.date)}</td><td style="font-family:var(--body)">${f.archs.map(a=>esc(nameOf(a))).join(", ")}</td></tr>`).join("")}</tbody></table>`:`<p class="sub">Ninguna en este periodo.</p>`}</div>
+  </section>`;
+}
+const BASICS=new Set(["Plains","Island","Swamp","Mountain","Forest","Wastes"]);
+const isBasic=c=>BASICS.has(c)||c.startsWith("Snow-Covered ");
+function isNewInFormat(card,cur){const f=D.cardIdx[card];return f&&cur.includes(f)&&D.status?.baseline_until&&f>=D.status.baseline_until}
+function newInFormat(cur,chs){const res=[];const bu=D.status?.baseline_until||"0";for(const [card,f] of Object.entries(D.cardIdx)){if(!cur.includes(f)||f<bu||isBasic(card))continue;const archs=new Set();for(const ds of cur){const doc=D.cards[ds];if(!doc)continue;for(const ch of chs)for(const [s,v] of Object.entries(doc.l?.[ch]||{}))if(v.c[card])archs.add(s)}if(archs.size)res.push({card,date:f,archs:[...archs]})}return res.sort((a,b)=>b.date.localeCompare(a.date))}
+
+const KIND={new_card:"Carta nueva",arch_card:"Tecnología",new_arch:"Arquetipo nuevo",share_up:"Sube",share_down:"Baja",surprise:"Sorpresa"};
+function viewAlertas(){
+  const seen=LS.get("ms_seen","");
+  const list=D.alerts.filter(a=>S.afilter==="all"||a.type===S.afilter||(S.afilter==="share"&&a.type.startsWith("share")));
+  const types=[["all","Todas"],["new_card","Cartas nuevas"],["arch_card","Tecnología"],["share","Cuota"],["new_arch","Arquetipos"],["surprise","Sorpresas"]];
+  return `<section>
+    <h2>Alertas</h2>
+    <p class="sub">Se generan en cada actualización diaria (6:00). Avisan de cartas que aparecen por primera vez, cambios en las listas de un arquetipo, subidas o bajadas de más de 3 puntos en una semana, arquetipos nuevos y ganadores inesperados.</p>
+    <div class="chips" role="group" aria-label="Tipo de alerta">${types.map(([v,l])=>`<button class="chip" id="af-${v}" data-af="${v}" aria-pressed="${S.afilter===v}">${l}</button>`).join("")}</div>
+    <div class="alist">${list.length?list.slice(0,150).map(a=>`<article class="alert ${esc(a.sev)}">
+      <div class="meta">${seen&&(a.created||"")>seen?'<span class="dot" title="Nueva desde tu última visita"></span>':""}<span class="kind" style="color:var(--sev-${esc(a.sev)})">${esc(KIND[a.type]||a.type)}</span><span>${fmtDate(a.date)}</span>${a.ch?`<span>${esc(String(a.ch).split("+").map(chLabel).join(" + "))}</span>`:""}</div>
+      <div class="title">${a.arch?pips(a.arch):""}${esc(a.title)}</div>
+      <div class="det">${esc(a.detail)}</div>
+      ${a.arch&&a.arch!=="other"?`<div><button class="linkbtn" data-goto-tech="${esc(a.arch)}">Ver la tecnología de ${esc(nameOf(a.arch))} →</button></div>`:""}
+    </article>`).join(""):`<div class="empty">No hay alertas de este tipo todavía.</div>`}</div>
+  </section>`;
+}
+const emptyBlock=t=>`<div class="empty">${esc(t)}</div>`;
+
+/* ---------- render y eventos ---------- */
+function render(){
+  for(const b of document.querySelectorAll("#f-ch button"))b.setAttribute("aria-pressed",b.dataset.v===S.ch);
+  for(const b of document.querySelectorAll("#f-win button"))b.setAttribute("aria-pressed",+b.dataset.v===S.win);
+  for(const a of document.querySelectorAll("nav.tabs a")){if(a.dataset.tab===S.tab)a.setAttribute("aria-current","page");else a.removeAttribute("aria-current")}
+  const st=D.status;
+  $("#stamp").textContent=st?`Actualizado ${new Date(st.updated).toLocaleString("es-ES",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"})} · datos hasta el ${fmtDate(st.through)}`:(D.ready?"Sin datos todavía":"Cargando datos…");
+  const seen=LS.get("ms_seen","");const nNew=D.alerts.filter(a=>(a.created||"")>seen).length;
+  const bd=$("#abadge");bd.hidden=!seen||!nNew||S.tab==="alertas";bd.textContent=nNew;
+  const v=$("#view");
+  if(!D.ready){return}
+  if(!Object.keys(D.days).length){v.innerHTML=emptyBlock("Todavía no hay datos. Se cargan con la actualización diaria de las 6:00.");return}
+  v.innerHTML={meta:viewMeta,cruces:viewCruces,tendencias:viewTendencias,tecnologia:viewTecnologia,alertas:viewAlertas}[S.tab]();
+}
+function setTab(t){if(S.tab==="alertas"&&t!=="alertas")markSeen();S.tab=t;LS.set("ms_tab",t);try{history.replaceState(null,"","#"+t)}catch(e){}render();window.scrollTo({top:0})}
+function markSeen(){const mx=D.alerts.reduce((m,a)=>(a.created||"")>m?a.created:m,"");if(mx)LS.set("ms_seen",mx)}
+document.addEventListener("click",ev=>{
+  const t=ev.target.closest("button,a");if(!t)return;
+  if(t.closest("#f-ch")){S.ch=t.dataset.v;LS.set("ms_ch",S.ch);render();return}
+  if(t.closest("#f-win")){S.win=+t.dataset.v;LS.set("ms_win",S.win);render();return}
+  if(t.dataset.tab){ev.preventDefault();setTab(t.dataset.tab);return}
+  if(t.dataset.arch){S.open=S.open===t.dataset.arch?null:t.dataset.arch;render();const r=document.getElementById("row-"+t.dataset.arch);r&&r.focus({preventScroll:true});return}
+  if(t.id==="toggle-all"){S.showAll=!S.showAll;render();return}
+  if(t.dataset.tech){S.techArch=t.dataset.tech;render();return}
+  if(t.dataset.gotoTech){S.techArch=t.dataset.gotoTech;setTab("tecnologia");return}
+  if(t.dataset.af){S.afilter=t.dataset.af;render();return}
+});
+window.addEventListener("pagehide",()=>{if(S.tab==="alertas")markSeen()});
+
+/* ---------- datos ---------- */
+async function boot(){
+  S.ch=LS.get("ms_ch","all");S.win=LS.get("ms_win",14);
+  const h=(location.hash||"").slice(1);S.tab=["meta","cruces","tendencias","tecnologia","alertas"].includes(h)?h:LS.get("ms_tab","meta");
+  render();
+  let lastLoad=0;
+  async function loadAll(){
+    try{
+      const r=await fetch("data/core.json",{cache:"no-cache"});
+      if(!r.ok) throw new Error("HTTP "+r.status);
+      const c=await r.json();
+      D.status=c.status||null;D.days=c.days||{};D.archIdx=c.archIdx||{};D.cardIdx=c.cardIdx||{};D.matrix=c.matrix||null;
+      const sev={high:0,med:1,low:2};
+      D.alerts=(c.alerts||[]).slice().sort((a,b)=>b.date.localeCompare(a.date)||(sev[a.sev]-sev[b.sev]));
+      D.ready=true;lastLoad=Date.now();
+      if(!LS.get("ms_seen",""))markSeen();
+      render();
+      const r2=await fetch("data/cards-recent.json",{cache:"no-cache"});
+      if(r2.ok){D.cards=await r2.json();D.cardsReady=true;render()}
+    }catch(e){
+      D.ready=true;
+      if(!Object.keys(D.days).length){$("#view").innerHTML=emptyBlock("No se han podido cargar los datos. Comprueba la conexión y vuelve a abrir la app.");$("#stamp").textContent="Sin conexión"}
+    }
+  }
+  await loadAll();
+  document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"&&Date.now()-lastLoad>10*60*1000)loadAll()});
+  setupInstall();
+}
+function setupInstall(){
+  const standalone=window.matchMedia("(display-mode: standalone)").matches||navigator.standalone;
+  if(standalone||LS.get("ms_noinstall",false))return;
+  const ios=/iphone|ipad|ipod/i.test(navigator.userAgent);
+  const box=document.createElement("div");box.className="install";box.id="install";
+  const show=(html)=>{box.innerHTML=html+'<button class="xbtn" id="install-x" aria-label="Cerrar">×</button>';const w=$("#view");w.parentNode.insertBefore(box,w);box.style.margin="12px auto 0";box.style.maxWidth="828px"};
+  if(ios){show('<span>Para tenerla como app: pulsa <strong>Compartir</strong> y luego <strong>Añadir a pantalla de inicio</strong>.</span>')}
+  else{window.addEventListener("beforeinstallprompt",ev=>{ev.preventDefault();window.__ip=ev;show('<span>Instala Meta Standard en tu móvil para abrirla como una app.</span><button class="btn" id="install-go">Instalar</button>')})}
+  document.addEventListener("click",async e=>{
+    if(e.target.id==="install-x"){LS.set("ms_noinstall",true);box.remove()}
+    if(e.target.id==="install-go"&&window.__ip){window.__ip.prompt();try{await window.__ip.userChoice}catch(_){}box.remove()}
+  });
+}
+if("serviceWorker" in navigator){window.addEventListener("load",()=>{navigator.serviceWorker.register("sw.js").catch(()=>{})})}
+boot();
+})();
+</script>
+</body>
+</html>

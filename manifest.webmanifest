@@ -1,0 +1,16 @@
+{
+  "name": "Meta Standard",
+  "short_name": "Meta Standard",
+  "description": "Meta de Magic: The Gathering Standard en papel y MTGO para el grupo de testeo.",
+  "lang": "es",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f3f4f1",
+  "theme_color": "#1f3f54",
+  "icons": [
+    {"src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png"},
+    {"src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png"},
+    {"src": "icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable"}
+  ]
+}
