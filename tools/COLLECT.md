@@ -36,11 +36,11 @@ date	ch	ev	event	players	arch	arch_name	place	record	deck	deck_id
 Si un día no tiene decks, crea igualmente el fichero solo con la cabecera.
 Un fichero por fecha con las filas de los dos canales.
 
-## 2. Listas del top 8 → `RAW/lists/<deck_id>.txt`
+## 2. Listas del top 16 → `RAW/lists/<deck_id>.txt`
 
 Si te han dado un fichero de pendientes (`todo.tsv`, columnas `deck_id` y
 `header`), descarga solo esas listas. Si no, descarga la de cada deck del paso 1
-con `place <= 8`.
+con `place <= 16`.
 
 Para cada una, llama a `event_deck_get(deck_id=<deck_id>, format="text")` y
 escribe un fichero:

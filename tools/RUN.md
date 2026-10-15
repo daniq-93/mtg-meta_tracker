@@ -39,6 +39,7 @@ Si no hay cambios en `data/`, no hagas commit. Si el push falla, reintenta una v
 ## 5. Aviso
 Con `SendUserMessage`, envía un resumen corto en español con lo que dice `summary.md`:
 - "Meta Standard actualizado: N decks, M listas nuevas (fechas)".
-- Si hubo alertas nuevas, lístalas (máximo 8, primero las de gravedad high).
+- Las alertas nuevas del bloque "en Top 8 (o generales)" (máximo 8, primero las de gravedad high).
+- Si el bloque "solo en Top 16" tiene alertas, una sola línea: "Y N más en el Top 16".
 - Cualquier fallo de recogida o de publicación.
 Si no hubo torneos nuevos ni alertas, una sola línea basta.

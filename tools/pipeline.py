@@ -176,10 +176,11 @@ def build_day_docs(decks):
             ch, s = r["ch"], r["arch"]
             names[s] = r["arch_name"]
             w, l, dr = parse_record(r["record"])
-            cell = a[ch].setdefault(s, [0, 0, 0, 0, 0, 0])  # decks, W, L, D, top8, 1º
+            cell = a[ch].setdefault(s, [0, 0, 0, 0, 0, 0, 0])  # decks, W, L, D, top8, 1º, top16
             cell[0] += 1; cell[1] += w; cell[2] += l; cell[3] += dr
             if r["place"] <= 8: cell[4] += 1
             if r["place"] == 1: cell[5] += 1
+            if r["place"] <= 16: cell[6] += 1
             ev = events.setdefault(r["ev"], {"id": r["ev"], "n": r["event"], "ch": ch,
                                              "p": r["players"], "d": 0, "w": None})
             ev["d"] += 1
@@ -200,16 +201,19 @@ def build_card_docs(lists, existing=None):
         by_date[L["date"]].append(L)
     docs = {}
     for date, ls in by_date.items():
-        base = json.loads(json.dumps(existing.get(date) or {"date": date, "l": {}, "top": []}))
-        l, top = base.setdefault("l", {}), base.setdefault("top", [])
+        base = json.loads(json.dumps(existing.get(date) or {"date": date, "l": {}, "l16": {}, "top": []}))
+        l, l16, top = base.setdefault("l", {}), base.setdefault("l16", {}), base.setdefault("top", [])
         have = {t.get("u") for t in top}
         added = 0
         for L in ls:
             if L["deck"] and L["deck"] in have:
                 continue
+            if L["place"] > 16:
+                continue
             have.add(L["deck"])
             added += 1
-            node = l.setdefault(L["ch"], {}).setdefault(L["arch"], {"n": 0, "c": {}})
+            dest = l if L["place"] <= 8 else l16
+            node = dest.setdefault(L["ch"], {}).setdefault(L["arch"], {"n": 0, "c": {}})
             node["n"] += 1
             for name, q in L["main"].items():
                 c = node["c"].setdefault(name, [0, 0, 0, 0])
@@ -228,7 +232,7 @@ def build_card_docs(lists, existing=None):
 
 
 def write_todo(decks, card_state, path):
-    """Escribe las cabeceras de las listas de top 8 que faltan por descargar."""
+    """Escribe las cabeceras de las listas de top 16 que faltan por descargar."""
     have = defaultdict(set)
     for ds, (doc, _v) in card_state.items():
         for t in (doc or {}).get("top", []):
@@ -237,7 +241,7 @@ def write_todo(decks, card_state, path):
     with open(path, "w", encoding="utf-8") as f:
         f.write("deck_id\theader\n")
         for r in decks:
-            if r["place"] > 8 or r["deck"] in have[r["date"]]:
+            if r["place"] > 16 or r["deck"] in have[r["date"]]:
                 continue
             if not r.get("deck_id") or r["deck_id"] == "-":
                 print(f"[aviso] falta deck_id para {r['deck']}", file=sys.stderr)
@@ -264,14 +268,42 @@ def arch_share(day_docs, dates, ch):
     return tot, per
 
 
-def cards_in(card_docs, dates, arch=None):
+def tier_nodes(doc, tier):
+    """Listas de un día para el nivel pedido: {ch: {arch: {"n", "c"}}}.
+    tier 8 = puestos 1-8; tier 16 = puestos 1-16 (l + l16)."""
+    keys = ("l",) if tier == 8 else ("l", "l16")
+    out = {}
+    for k in keys:
+        for ch, archs in (doc or {}).get(k, {}).items():
+            for s, node in archs.items():
+                m = out.setdefault(ch, {}).setdefault(s, {"n": 0, "c": {}})
+                m["n"] += node["n"]
+                for card, c in node["c"].items():
+                    e = m["c"].setdefault(card, [0, 0, 0, 0])
+                    for i in range(4):
+                        e[i] += c[i]
+    return out
+
+
+def first_seen(card_docs, tier):
+    idx = {}
+    for ds in sorted(card_docs):
+        for ch, archs in tier_nodes(card_docs[ds], tier).items():
+            for s, node in archs.items():
+                for card in node["c"]:
+                    if card not in idx:
+                        idx[card] = ds
+    return idx
+
+
+def cards_in(card_docs, dates, arch=None, tier=8):
     """{card: {"main": decks, "side": decks, "archs": {arch: n}}} y nº de listas."""
     res, n = {}, 0
     for ds in dates:
         doc = card_docs.get(ds)
         if not doc:
             continue
-        for ch, archs in doc["l"].items():
+        for ch, archs in tier_nodes(doc, tier).items():
             for s, node in archs.items():
                 if arch and s != arch:
                     continue
@@ -283,11 +315,17 @@ def cards_in(card_docs, dates, arch=None):
     return res, n
 
 
-def compute_alerts(day_docs, card_docs, names, first_card, first_arch, eval_dates, baseline_until, today):
+def compute_alerts(day_docs, card_docs, names, first_card, first_arch, eval_dates, baseline_until, today,
+                   tier=8, lists=True, general=True):
+    """Alertas de listas (cartas) para un nivel (8 o 16) y/o alertas generales (cuota, arquetipos,
+    sorpresas), que no dependen del nivel."""
     alerts = {}
+    suffix = "" if tier == 8 else f"-t{tier}"
 
     def add(aid, **kw):
-        aid = slugify(aid)[:190]
+        is_list = kw.get("type") in ("new_card", "arch_card")
+        aid = slugify(aid + (suffix if is_list else ""))[:190]
+        kw["tiers"] = [tier] if is_list else [8, 16]
         alerts[aid] = kw
 
     def nm(s):
@@ -297,11 +335,11 @@ def compute_alerts(day_docs, card_docs, names, first_card, first_arch, eval_date
         if D < baseline_until:
             continue
         Dd = d(D)
-        cdoc = card_docs.get(D)
+        cdoc = tier_nodes(card_docs.get(D), tier) if (lists and card_docs.get(D)) else None
         prev28 = window_dates(Dd - dt.timedelta(days=1), 28)
         # 1. cartas nuevas en el formato
         if cdoc:
-            today_cards, _ = cards_in(card_docs, {D})
+            today_cards, _ = cards_in(card_docs, {D}, tier=tier)
             for card, e in today_cards.items():
                 if first_card.get(card) == D and card not in BASICS:
                     archs = ", ".join(nm(s) for s in sorted(e["archs"], key=lambda s: -e["archs"][s]))
@@ -309,12 +347,12 @@ def compute_alerts(day_docs, card_docs, names, first_card, first_arch, eval_date
                     add(f"newcard-{card}", date=D, type="new_card", sev="high" if e["main"] else "med",
                         card=card, arch=next(iter(e["archs"]), None),
                         title=f"Carta nueva en el formato: {card}",
-                        detail=f"Aparece por primera vez en una lista de top 8 ({where}), en {archs}.")
+                        detail=f"Aparece por primera vez en una lista de top {tier} ({where}), en {archs}.")
             # 2. cartas nuevas dentro de un arquetipo (una alerta por arquetipo y día)
             per_arch = defaultdict(lambda: {"main": [], "side": [], "nb": 0, "ch": set()})
-            for ch, archs in cdoc["l"].items():
+            for ch, archs in cdoc.items():
                 for s, node in archs.items():
-                    before, nb = cards_in(card_docs, prev28, arch=s)
+                    before, nb = cards_in(card_docs, prev28, arch=s, tier=tier)
                     if nb < 4:
                         continue
                     for card, c in node["c"].items():
@@ -337,10 +375,10 @@ def compute_alerts(day_docs, card_docs, names, first_card, first_arch, eval_date
                          else f"{nm(s)} incorpora {len(cards)} cartas nuevas")
                 add(f"archcard-{s}-{D}", date=D, type="arch_card", sev="med" if e["main"] else "low",
                     arch=s, ch="+".join(sorted(e["ch"])), cards=cards, card=cards[0], title=title,
-                    detail=(f"En listas de top 8 del {D} ({'; '.join(parts)}). "
+                    detail=(f"En listas de top {tier} del {D} ({'; '.join(parts)}). "
                             f"No aparecían en las {e['nb']} listas de este arquetipo de los 28 días anteriores."))
         # 3. arquetipo nuevo
-        ddoc = day_docs.get(D)
+        ddoc = day_docs.get(D) if general else None
         if ddoc:
             for ch, archs in ddoc["a"].items():
                 for s, cell in archs.items():
@@ -364,7 +402,7 @@ def compute_alerts(day_docs, card_docs, names, first_card, first_arch, eval_date
 
     # 5. subidas y bajadas de cuota (una vez por semana y arquetipo)
     T = d(today)
-    if today >= baseline_until:
+    if general and today >= baseline_until:
         last = window_dates(T, 7)
         prev = window_dates(T - dt.timedelta(days=7), 7)
         iso = T.isocalendar()
@@ -463,6 +501,7 @@ def build_bundles(datadir):
         "days": days,
         "archIdx": (st.get("index", {}).get("archs") or ({}, None))[0].get("a", {}),
         "cardIdx": (st.get("index", {}).get("cards") or ({}, None))[0].get("c", {}),
+        "cardIdx16": (st.get("index", {}).get("cards") or ({}, None))[0].get("c16", {}),
         "matrix": (st.get("matrix", {}).get("paper") or (None, None))[0],
         "alerts": alerts[:BUNDLE_ALERTS],
         "cardDates": sorted(cards),
@@ -532,13 +571,12 @@ def main():
                 e["f"] = min(e["f"], ds); e["l"] = max(e["l"], ds)
     first_arch = {s: e["f"] for s, e in arch_idx.items()}
 
-    card_idx = dict((old_index.get("cards") or ({}, None))[0].get("c", {}))
-    for ds in sorted(card_docs):
-        for ch, archs in card_docs[ds]["l"].items():
-            for s, node in archs.items():
-                for card in node["c"]:
-                    if card not in card_idx or ds < card_idx[card]:
-                        card_idx[card] = ds
+    old_cards = (old_index.get("cards") or ({}, None))[0]
+    card_idx, card_idx16 = dict(old_cards.get("c", {})), dict(old_cards.get("c16", {}))
+    for idx, tier in ((card_idx, 8), (card_idx16, 16)):
+        for card, ds in first_seen(card_docs, tier).items():
+            if card not in idx or ds < idx[card]:
+                idx[card] = ds
 
     status_old = (state.get("meta", {}).get("status") or ({}, None))[0]
     all_dates = sorted(set(day_docs) | set(card_docs))
@@ -546,8 +584,18 @@ def main():
     baseline_until = (d(since) + dt.timedelta(days=args.baseline_days)).isoformat()
     eval_dates = [x for x in args.eval_dates.split(",") if x] or sorted(set(new_days) | set(new_cards))
 
+    last = max(all_dates) if all_dates else args.today
     alerts = compute_alerts(day_docs, card_docs, names, card_idx, first_arch,
-                            eval_dates, baseline_until, max(all_dates) if all_dates else args.today)
+                            eval_dates, baseline_until, last, tier=8)
+    a16 = compute_alerts(day_docs, card_docs, names, card_idx16, first_arch,
+                         eval_dates, baseline_until, last, tier=16, general=False)
+    for aid, a in a16.items():
+        base = aid[:-4] if aid.endswith("-t16") else None
+        twin = alerts.get(base) if base else None
+        if twin and twin["type"] == "new_card" == a["type"] and twin["date"] == a["date"]:
+            twin["tiers"] = [8, 16]   # misma carta nueva el mismo día en los dos niveles: una sola alerta
+            continue
+        alerts[aid] = a
     existing_alerts = state.get("alerts", {})
     fresh = {k: v for k, v in alerts.items() if k not in existing_alerts}
 
@@ -579,7 +627,7 @@ def main():
     for ds, doc in sorted(new_cards.items()):
         put("cards", ds, doc)
     put("index", "archs", {"a": arch_idx})
-    put("index", "cards", {"c": card_idx})
+    put("index", "cards", {"c": card_idx, "c16": card_idx16})
     if matrix:
         put("matrix", "paper", matrix)
     for aid, a in sorted(fresh.items()):
@@ -636,7 +684,14 @@ def main():
              (f"- Ficheros escritos en el repositorio: {len(writes)}" if args.repo else
               f"- Lotes de escritura: {len(batches)} ({len(writes)} operaciones)"),
              f"- Alertas nuevas: {len(fresh)}"]
-    for aid, a in sorted(fresh.items(), key=lambda kv: (sev_order.get(kv[1]['sev'], 3), kv[1]['date'])):
+    ordered = sorted(fresh.items(), key=lambda kv: (sev_order.get(kv[1]['sev'], 3), kv[1]['date']))
+    in8 = [a for _, a in ordered if 8 in a.get("tiers", [8])]
+    only16 = [a for _, a in ordered if 8 not in a.get("tiers", [8])]
+    lines.append(f"- Alertas nuevas en Top 8 (o generales): {len(in8)}")
+    for a in in8:
+        lines.append(f"  - [{a['sev']}] {a['title']} — {a['detail']}")
+    lines.append(f"- Alertas nuevas solo en Top 16: {len(only16)}")
+    for a in only16:
         lines.append(f"  - [{a['sev']}] {a['title']} — {a['detail']}")
     if needs:
         lines.append(f"- AVISO: faltan versiones para: {', '.join(needs)}")

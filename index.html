@@ -204,6 +204,10 @@ table.mx{border-collapse:separate;border-spacing:2px;font-size:12px;margin:6px}
         <button id="w-14" data-v="14" aria-pressed="true">14 días</button>
         <button id="w-30" data-v="30" aria-pressed="false">30 días</button>
       </div>
+      <div class="seg" role="group" aria-label="Puestos" id="f-top">
+        <button id="top-8" data-v="8" aria-pressed="true">Top 8</button>
+        <button id="top-16" data-v="16" aria-pressed="false">Top 16</button>
+      </div>
     </div>
     <nav class="tabs" aria-label="Secciones">
       <a href="#meta" data-tab="meta" aria-current="page">Meta</a>
@@ -221,8 +225,8 @@ table.mx{border-collapse:separate;border-spacing:2px;font-size:12px;margin:6px}
 <script>
 (function(){
 "use strict";
-const S={ch:"all",win:14,tab:"meta",open:null,showAll:false,techArch:null,afilter:"all"};
-const D={days:{},cards:{},archIdx:{},cardIdx:{},matrix:null,status:null,alerts:[],ready:false,cardsReady:false};
+const S={ch:"all",win:14,top:8,tab:"meta",open:null,showAll:false,techArch:null,afilter:"all"};
+const D={days:{},cards:{},archIdx:{},cardIdx:{},cardIdx16:{},matrix:null,status:null,alerts:[],ready:false,cardsReady:false};
 const $=s=>document.querySelector(s);
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const LS={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
@@ -253,18 +257,28 @@ function agg(dates,chs){
   for(const ds of dates){const doc=D.days[ds];if(!doc)continue;
     for(const ch of chs){const m=doc.a?.[ch];if(!m)continue;
       for(const [s,c] of Object.entries(m)){const e=r.a[s]||(r.a[s]={d:0,w:0,l:0,dr:0,t8:0,win:0});
-        e.d+=c[0];e.w+=c[1];e.l+=c[2];e.dr+=c[3];e.t8+=c[4];e.win+=c[5];r.tot+=c[0];}}}
+        e.d+=c[0];e.w+=c[1];e.l+=c[2];e.dr+=c[3];e.t8+=(S.top===16?(c[6]??c[4]):c[4]);e.win+=c[5];r.tot+=c[0];}}}
   return r;
 }
 function wilson(w,n){if(!n)return null;const z=1.96,p=w/n,den=1+z*z/n,c=(p+z*z/(2*n))/den,h=z*Math.sqrt(p*(1-p)/n+z*z/(4*n*n))/den;return{p,lo:c-h,hi:c+h}}
+let TN={};
+function tierNodes(doc){
+  if(!doc)return {};const k=doc.date+"|"+S.top;if(TN[k])return TN[k];
+  const out={};for(const key of (S.top===16?["l","l16"]:["l"]))for(const [ch,archs] of Object.entries(doc[key]||{}))for(const [s,node] of Object.entries(archs)){
+    const m=(out[ch]??={})[s]??={n:0,c:{}};m.n+=node.n;for(const [card,v] of Object.entries(node.c)){const e=m.c[card]??=[0,0,0,0];for(let i=0;i<4;i++)e[i]+=v[i]}}
+  return TN[k]=out;
+}
+const curIdx=()=>S.top===16?D.cardIdx16:D.cardIdx;
+const alertTiers=a=>a.tiers||((a.type==="new_card"||a.type==="arch_card")?[8]:[8,16]);
+const tierAlerts=()=>D.alerts.filter(a=>alertTiers(a).includes(S.top));
 function cardAgg(dates,arch,chs){
   const out={n:0,c:{}};
   for(const ds of dates){const doc=D.cards[ds];if(!doc)continue;
-    for(const ch of chs){const node=doc.l?.[ch]?.[arch];if(!node)continue;out.n+=node.n;
+    const tn=tierNodes(doc);for(const ch of chs){const node=tn[ch]?.[arch];if(!node)continue;out.n+=node.n;
       for(const [card,v] of Object.entries(node.c)){const e=out.c[card]||(out.c[card]=[0,0,0,0]);for(let i=0;i<4;i++)e[i]+=v[i];}}}
   return out;
 }
-function topLists(arch,dates,chs){const res=[];for(const ds of dates.slice().reverse()){const doc=D.cards[ds];if(!doc)continue;for(const t of doc.top||[])if(t.a===arch&&chs.includes(t.ch))res.push({...t,date:ds});}return res}
+function topLists(arch,dates,chs){const res=[];for(const ds of dates.slice().reverse()){const doc=D.cards[ds];if(!doc)continue;for(const t of doc.top||[])if(t.a===arch&&t.p<=S.top&&chs.includes(t.ch))res.push({...t,date:ds});}return res}
 
 /* ---------- vistas ---------- */
 function pct(x,dig=1){return (100*x).toFixed(dig)}
@@ -279,7 +293,7 @@ function viewMeta(){
   const maxSh=rows[0]?.sh||1;
   const evs=[];for(const ds of cur){const doc=D.days[ds];if(!doc)continue;for(const ev of doc.ev||[])if(chs.includes(ev.ch))evs.push({...ev,date:ds})}
   evs.sort((a,b)=>b.date.localeCompare(a.date));
-  const lists=cur.reduce((n,ds)=>{const doc=D.cards[ds];if(!doc)return n;for(const ch of chs)for(const v of Object.values(doc.l?.[ch]||{}))n+=v.n;return n},0);
+  const lists=cur.reduce((n,ds)=>{const doc=D.cards[ds];if(!doc)return n;const tn=tierNodes(doc);for(const ch of chs)for(const v of Object.values(tn[ch]||{}))n+=v.n;return n},0);
   const shown=S.showAll?rows:rows.filter((r,i)=>i<15||r.sh>=0.01);
   const rowsHtml=shown.map(r=>{const wr=wilson(r.e.w,r.e.w+r.e.l);const cls=wr&&(r.e.w+r.e.l)>=20?(wr.lo>0.5?"hi":wr.hi<0.5?"lo":""):"";
     const open=S.open===r.s;
@@ -295,14 +309,14 @@ function viewMeta(){
       <div class="kpi"><b>${evs.length}</b><span>Torneos</span></div>
       <div class="kpi"><b>${A.tot}</b><span>Decks</span></div>
       <div class="kpi"><b>${rows.length}</b><span>Arquetipos</span></div>
-      <div class="kpi"><b>${lists}</b><span>Listas top 8</span></div>
+      <div class="kpi"><b>${lists}</b><span>Listas top ${S.top}</span></div>
     </div>
   </section>
   <section>
     <h2>Meta actual</h2>
     <p class="sub">Últimos ${S.win} días hasta el ${fmtDate(end)} · ${S.ch==="all"?"papel y MTGO":chLabel(S.ch)}. La flecha compara con los ${S.win} días anteriores, en puntos. El % de victoria sale de los récords de cada deck contra todo el campo; en verde o rojo solo si la diferencia con el 50% es clara.</p>
     <div class="board" role="list">
-      <div class="bhead"><span>Arquetipo</span><span>Cuota</span><span>Top 8</span><span>Victoria</span></div>
+      <div class="bhead"><span>Arquetipo</span><span>Cuota</span><span>Top ${S.top}</span><span>Victoria</span></div>
       ${rowsHtml}
     </div>
     ${rows.length>shown.length||S.showAll?`<button class="linkbtn more" id="toggle-all">${S.showAll?"Ver solo los principales":`Ver los ${rows.length} arquetipos`}</button>`:""}
@@ -323,10 +337,10 @@ function detailHtml(s,cur,chs,A){
   const tl=topLists(s,range(end,30),chs).slice(0,6);
   return `<div class="detail">
     <div class="dgrid">
-      <div><h3>Cuota, media de 7 días</h3>${spark(series)}<p class="sub">${e.d} decks · ${e.t8} top 8 · ${e.win} ${e.win===1?"torneo ganado":"torneos ganados"} · récord ${e.w}-${e.l}${e.dr?"-"+e.dr:""}</p></div>
+      <div><h3>Cuota, media de 7 días</h3>${spark(series)}<p class="sub">${e.d} decks · ${e.t8} top ${S.top} · ${e.win} ${e.win===1?"torneo ganado":"torneos ganados"} · récord ${e.w}-${e.l}${e.dr?"-"+e.dr:""}</p></div>
       <div><h3>Cruces en papel</h3>${mHtml}</div>
     </div>
-    <div><h3>Últimas listas en top 8</h3>${tl.length?`<div class="mlist">${tl.map(t=>`<div><a href="https://www.spellbinder.gg/decks/${esc(t.u)}" target="_blank" rel="noopener">${esc(t.e)}</a><span class="num stamp">${fmtDate(t.date)} · ${t.p}º · ${esc(t.r)}</span></div>`).join("")}</div>`:`<p class="sub">Ninguna lista de top 8 en los últimos 30 días.</p>`}</div>
+    <div><h3>Últimas listas en top ${S.top}</h3>${tl.length?`<div class="mlist">${tl.map(t=>`<div><a href="https://www.spellbinder.gg/decks/${esc(t.u)}" target="_blank" rel="noopener">${esc(t.e)}</a><span class="num stamp">${fmtDate(t.date)} · ${t.p}º · ${esc(t.r)}</span></div>`).join("")}</div>`:`<p class="sub">Ninguna lista de top ${S.top} en los últimos 30 días.</p>`}</div>
     <div><button class="linkbtn" data-goto-tech="${esc(s)}">Ver su tecnología →</button></div>
   </div>`;
 }
@@ -395,9 +409,9 @@ function viewTendencias(){
 function viewTecnologia(){
   const end=latest(),chs=chans(),cur=range(end,S.win),base=range(addDays(end,-S.win),28);
   // arquetipos con listas en el periodo
-  const counts={};for(const ds of cur){const doc=D.cards[ds];if(!doc)continue;for(const ch of chs)for(const [s,v] of Object.entries(doc.l?.[ch]||{}))counts[s]=(counts[s]||0)+v.n}
+  const counts={};for(const ds of cur){const doc=D.cards[ds];if(!doc)continue;const tn=tierNodes(doc);for(const ch of chs)for(const [s,v] of Object.entries(tn[ch]||{}))counts[s]=(counts[s]||0)+v.n}
   const archs=Object.entries(counts).sort((a,b)=>b[1]-a[1]).map(x=>x[0]);
-  if(!archs.length) return emptyBlock(D.cardsReady?"No hay listas de top 8 en este periodo y canal.":"Cargando las listas de top 8…");
+  if(!archs.length) return emptyBlock(D.cardsReady?`No hay listas de top ${S.top} en este periodo y canal.`:`Cargando las listas de top ${S.top}…`);
   if(!S.techArch||!counts[S.techArch]) S.techArch=archs[0];
   const s=S.techArch,R=cardAgg(cur,s,chs),Bs=cardAgg(base,s,chs);
   const rows=Object.keys({...R.c,...Bs.c}).map(card=>{const r=R.c[card]||[0,0,0,0],b=Bs.c[card]||[0,0,0,0];
@@ -411,7 +425,7 @@ function viewTecnologia(){
   const fresh=newInFormat(cur,chs);
   return `<section>
     <h2>Tecnología por arquetipo</h2>
-    <p class="sub">Compara las listas de top 8 de los últimos ${S.win} días con las de los 28 días anteriores. Los % son la parte de listas que juegan la carta; ×N es la media de copias en el main.</p>
+    <p class="sub">Compara las listas de top ${S.top} de los últimos ${S.win} días con las de los 28 días anteriores. Los % son la parte de listas que juegan la carta; ×N es la media de copias en el main.</p>
     <div class="chips" role="group" aria-label="Arquetipo">${archs.slice(0,18).map(a=>`<button class="chip" id="ta-${esc(a)}" data-tech="${esc(a)}" aria-pressed="${a===s}">${pips(a)}${esc(nameOf(a))} <span class="stamp">&nbsp;${counts[a]}</span></button>`).join("")}</div>
     <p class="sub"><strong>${esc(nameOf(s))}</strong>: ${R.n} listas ahora · ${Bs.n} en la base de comparación.${enough?"":" Con menos de 3 listas de base no se puede saber qué es nuevo; se muestra solo el núcleo."}</p>
   </section>
@@ -420,7 +434,7 @@ function viewTecnologia(){
   <section><div class="card"><h3>Núcleo del deck (en el main de ≥75% de las listas)</h3>${tbl(core)}</div></section>
   <section>
     <h2>Cartas nuevas en el formato</h2>
-    <p class="sub">Primera aparición registrada en una lista de top 8 dentro del periodo. El seguimiento empezó el ${fmtDate(D.status?.since)}; antes del ${fmtDate(D.status?.baseline_until)} todo contaba como base.</p>
+    <p class="sub">Primera aparición registrada en una lista de top ${S.top} dentro del periodo. El seguimiento empezó el ${fmtDate(D.status?.since)}; antes del ${fmtDate(D.status?.baseline_until)} todo contaba como base.</p>
     <div class="card">${fresh.length?`<table class="ctable"><thead><tr><th>Carta</th><th>Desde</th><th>Arquetipos</th></tr></thead><tbody>${fresh.map(f=>`<tr><td>${cardBtn(f.card)}</td><td>${fmtDate(f.date)}</td><td style="font-family:var(--body)">${f.archs.map(a=>esc(nameOf(a))).join(", ")}</td></tr>`).join("")}</tbody></table>`:`<p class="sub">Ninguna en este periodo.</p>`}</div>
   </section>`;
 }
@@ -458,17 +472,17 @@ function closeCard(){if(!VIEW)return;VIEW.el.remove();document.body.style.overfl
 document.addEventListener("keydown",e=>{if(e.key==="Escape"&&VIEW)closeCard()});
 const BASICS=new Set(["Plains","Island","Swamp","Mountain","Forest","Wastes"]);
 const isBasic=c=>BASICS.has(c)||c.startsWith("Snow-Covered ");
-function isNewInFormat(card,cur){const f=D.cardIdx[card];return f&&cur.includes(f)&&D.status?.baseline_until&&f>=D.status.baseline_until}
-function newInFormat(cur,chs){const res=[];const bu=D.status?.baseline_until||"0";for(const [card,f] of Object.entries(D.cardIdx)){if(!cur.includes(f)||f<bu||isBasic(card))continue;const archs=new Set();for(const ds of cur){const doc=D.cards[ds];if(!doc)continue;for(const ch of chs)for(const [s,v] of Object.entries(doc.l?.[ch]||{}))if(v.c[card])archs.add(s)}if(archs.size)res.push({card,date:f,archs:[...archs]})}return res.sort((a,b)=>b.date.localeCompare(a.date))}
+function isNewInFormat(card,cur){const f=curIdx()[card];return f&&cur.includes(f)&&D.status?.baseline_until&&f>=D.status.baseline_until}
+function newInFormat(cur,chs){const res=[];const bu=D.status?.baseline_until||"0";for(const [card,f] of Object.entries(curIdx())){if(!cur.includes(f)||f<bu||isBasic(card))continue;const archs=new Set();for(const ds of cur){const doc=D.cards[ds];if(!doc)continue;const tn=tierNodes(doc);for(const ch of chs)for(const [s,v] of Object.entries(tn[ch]||{}))if(v.c[card])archs.add(s)}if(archs.size)res.push({card,date:f,archs:[...archs]})}return res.sort((a,b)=>b.date.localeCompare(a.date))}
 
 const KIND={new_card:"Carta nueva",arch_card:"Tecnología",new_arch:"Arquetipo nuevo",share_up:"Sube",share_down:"Baja",surprise:"Sorpresa"};
 function viewAlertas(){
   const seen=LS.get("ms_seen","");
-  const list=D.alerts.filter(a=>S.afilter==="all"||a.type===S.afilter||(S.afilter==="share"&&a.type.startsWith("share")));
+  const list=tierAlerts().filter(a=>S.afilter==="all"||a.type===S.afilter||(S.afilter==="share"&&a.type.startsWith("share")));
   const types=[["all","Todas"],["new_card","Cartas nuevas"],["arch_card","Tecnología"],["share","Cuota"],["new_arch","Arquetipos"],["surprise","Sorpresas"]];
   return `<section>
     <h2>Alertas</h2>
-    <p class="sub">Se generan en cada actualización diaria (6:00). Avisan de cartas que aparecen por primera vez, cambios en las listas de un arquetipo, subidas o bajadas de más de 3 puntos en una semana, arquetipos nuevos y ganadores inesperados.</p>
+    <p class="sub">Se generan en cada actualización diaria (6:00). Avisan de cartas que aparecen por primera vez, cambios en las listas de un arquetipo, subidas o bajadas de más de 3 puntos en una semana, arquetipos nuevos y ganadores inesperados. Las alertas de cartas siguen el selector: ahora ves las del top ${S.top}${S.top===8?"; en Top 16 salen también las que asoman en los puestos 9 a 16":""}.</p>
     <div class="chips" role="group" aria-label="Tipo de alerta">${types.map(([v,l])=>`<button class="chip" id="af-${v}" data-af="${v}" aria-pressed="${S.afilter===v}">${l}</button>`).join("")}</div>
     <div class="alist">${list.length?list.slice(0,150).map(a=>`<article class="alert ${esc(a.sev)}">
       <div class="meta">${seen&&(a.created||"")>seen?'<span class="dot" title="Nueva desde tu última visita"></span>':""}<span class="kind" style="color:var(--sev-${esc(a.sev)})">${esc(KIND[a.type]||a.type)}</span><span>${fmtDate(a.date)}</span>${a.ch?`<span>${esc(String(a.ch).split("+").map(chLabel).join(" + "))}</span>`:""}</div>
@@ -485,10 +499,11 @@ const emptyBlock=t=>`<div class="empty">${esc(t)}</div>`;
 function render(){
   for(const b of document.querySelectorAll("#f-ch button"))b.setAttribute("aria-pressed",b.dataset.v===S.ch);
   for(const b of document.querySelectorAll("#f-win button"))b.setAttribute("aria-pressed",+b.dataset.v===S.win);
+  for(const b of document.querySelectorAll("#f-top button"))b.setAttribute("aria-pressed",+b.dataset.v===S.top);
   for(const a of document.querySelectorAll("nav.tabs a")){if(a.dataset.tab===S.tab)a.setAttribute("aria-current","page");else a.removeAttribute("aria-current")}
   const st=D.status;
   $("#stamp").textContent=st?`Actualizado ${new Date(st.updated).toLocaleString("es-ES",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"})} · datos hasta el ${fmtDate(st.through)}`:(D.ready?"Sin datos todavía":"Cargando datos…");
-  const seen=LS.get("ms_seen","");const nNew=D.alerts.filter(a=>(a.created||"")>seen).length;
+  const seen=LS.get("ms_seen","");const nNew=tierAlerts().filter(a=>(a.created||"")>seen).length;
   const bd=$("#abadge");bd.hidden=!seen||!nNew||S.tab==="alertas";bd.textContent=nNew;
   const v=$("#view");
   if(!D.ready){return}
@@ -503,6 +518,7 @@ document.addEventListener("click",ev=>{
   if(t.dataset.card){openCard(t.dataset.card);return}
   if(t.closest("#f-ch")){S.ch=t.dataset.v;LS.set("ms_ch",S.ch);render();return}
   if(t.closest("#f-win")){S.win=+t.dataset.v;LS.set("ms_win",S.win);render();return}
+  if(t.closest("#f-top")){S.top=+t.dataset.v;LS.set("ms_top",S.top);render();return}
   if(t.dataset.tab){ev.preventDefault();setTab(t.dataset.tab);return}
   if(t.dataset.arch){S.open=S.open===t.dataset.arch?null:t.dataset.arch;render();const r=document.getElementById("row-"+t.dataset.arch);r&&r.focus({preventScroll:true});return}
   if(t.id==="toggle-all"){S.showAll=!S.showAll;render();return}
@@ -514,7 +530,7 @@ window.addEventListener("pagehide",()=>{if(S.tab==="alertas")markSeen()});
 
 /* ---------- datos ---------- */
 async function boot(){
-  S.ch=LS.get("ms_ch","all");S.win=LS.get("ms_win",14);
+  S.ch=LS.get("ms_ch","all");S.win=LS.get("ms_win",14);S.top=LS.get("ms_top",8)===16?16:8;
   const h=(location.hash||"").slice(1);S.tab=["meta","cruces","tendencias","tecnologia","alertas"].includes(h)?h:LS.get("ms_tab","meta");
   render();
   let lastLoad=0;
@@ -523,14 +539,14 @@ async function boot(){
       const r=await fetch("data/core.json",{cache:"no-cache"});
       if(!r.ok) throw new Error("HTTP "+r.status);
       const c=await r.json();
-      D.status=c.status||null;D.days=c.days||{};D.archIdx=c.archIdx||{};D.cardIdx=c.cardIdx||{};D.matrix=c.matrix||null;
+      D.status=c.status||null;D.days=c.days||{};D.archIdx=c.archIdx||{};D.cardIdx=c.cardIdx||{};D.cardIdx16=c.cardIdx16||c.cardIdx||{};D.matrix=c.matrix||null;
       const sev={high:0,med:1,low:2};
       D.alerts=(c.alerts||[]).slice().sort((a,b)=>b.date.localeCompare(a.date)||(sev[a.sev]-sev[b.sev]));
       D.ready=true;lastLoad=Date.now();
       if(!LS.get("ms_seen",""))markSeen();
       render();
       const r2=await fetch("data/cards-recent.json",{cache:"no-cache"});
-      if(r2.ok){D.cards=await r2.json();D.cardsReady=true;render()}
+      if(r2.ok){D.cards=await r2.json();TN={};D.cardsReady=true;render()}
     }catch(e){
       D.ready=true;
       if(!Object.keys(D.days).length){$("#view").innerHTML=emptyBlock("No se han podido cargar los datos. Comprueba la conexión y vuelve a abrir la app.");$("#stamp").textContent="Sin conexión"}
