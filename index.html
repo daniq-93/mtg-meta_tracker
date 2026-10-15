@@ -165,6 +165,19 @@ table.mx{border-collapse:separate;border-spacing:2px;font-size:12px;margin:6px}
 .events div:first-child{border-top:0}
 .events .ename{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .foot{color:var(--ink-3);font-size:12px;max-width:70ch}
+/* cartas tocables y visor */
+.cardlink{background:none;border:0;padding:0;margin:0;font:inherit;color:inherit;text-align:left;cursor:pointer;text-decoration:underline;text-decoration-color:var(--line);text-decoration-thickness:1.5px;text-underline-offset:3px}
+.cardlink:hover{text-decoration-color:var(--accent);color:var(--accent)}
+.cchips{display:flex;flex-wrap:wrap;gap:4px 10px;font-size:13px}
+.viewer{position:fixed;inset:0;z-index:50;background:rgb(10 14 12/.95);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:calc(16px + env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) calc(16px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+.viewer .vimg{position:relative;width:min(88vw,calc(72vh * 0.716),488px);aspect-ratio:488/680;max-width:100%;border-radius:4.75%/3.5%;background:#1d2320;overflow:hidden;box-shadow:0 10px 40px rgb(0 0 0/.5)}
+.viewer img{width:100%;height:100%;display:block;object-fit:contain}
+.viewer .vmsg{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;padding:24px;color:#e7ebe8;font-size:14px}
+.viewer .vname{color:#e7ebe8;font:600 15px var(--body);text-align:center;max-width:488px}
+.viewer .vbar{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+.viewer .vbtn{border:1px solid rgb(255 255 255/.25);background:rgb(255 255 255/.08);color:#f3f4f1;font:500 14px var(--body);padding:8px 14px;border-radius:8px;cursor:pointer;text-decoration:none}
+.viewer .vbtn:hover{background:rgb(255 255 255/.16)}
+.viewer .vcredit{color:#9aa39e;font-size:11px;text-align:center}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 .install{display:flex;gap:10px;align-items:center;justify-content:space-between;background:var(--accent-soft);border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-size:13px}
 .install button{flex:0 0 auto}
@@ -394,7 +407,7 @@ function viewTecnologia(){
   const ganan=enough?rows.filter(x=>x.inR&&x.inB&&((x.rm-x.bm)>=.2||(x.rs-x.bs)>=.2)).sort((a,b)=>Math.max(b.rm-b.bm,b.rs-b.bs)-Math.max(a.rm-a.bm,a.rs-a.bs)):[];
   const pierden=enough?rows.filter(x=>x.inB&&((x.bm-x.rm)>=.2||(x.bs-x.rs)>=.2)&&!isBasic(x.card)).sort((a,b)=>Math.max(b.bm-b.rm,b.bs-b.rs)-Math.max(a.bm-a.rm,a.bs-a.rs)):[];
   const core=rows.filter(x=>x.rm>=.75).sort((a,b)=>b.rm-a.rm||b.rc-a.rc);
-  const tbl=(list,mode)=>list.length?`<table class="ctable"><thead><tr><th>Carta</th><th>Main ahora</th><th>Side ahora</th><th>Antes</th></tr></thead><tbody>${list.slice(0,20).map(x=>`<tr><td>${esc(x.card)}${mode==="new"&&isNewInFormat(x.card,cur)?'<span class="tag new">nueva en el formato</span>':""}</td><td>${x.rm?fmt(pct(x.rm,0))+"% <span class='stamp'>×"+fmt(x.rc.toFixed(1))+"</span>":"—"}</td><td>${x.rs?fmt(pct(x.rs,0))+"%":"—"}</td><td>${x.bm||x.bs?(x.bm?fmt(pct(x.bm,0))+"% main":"")+(x.bm&&x.bs?" · ":"")+(x.bs?fmt(pct(x.bs,0))+"% side":""):"—"}</td></tr>`).join("")}</tbody></table>`:`<p class="sub">Nada en este apartado.</p>`;
+  const tbl=(list,mode)=>list.length?`<table class="ctable"><thead><tr><th>Carta</th><th>Main ahora</th><th>Side ahora</th><th>Antes</th></tr></thead><tbody>${list.slice(0,20).map(x=>`<tr><td>${cardBtn(x.card)}${mode==="new"&&isNewInFormat(x.card,cur)?'<span class="tag new">nueva en el formato</span>':""}</td><td>${x.rm?fmt(pct(x.rm,0))+"% <span class='stamp'>×"+fmt(x.rc.toFixed(1))+"</span>":"—"}</td><td>${x.rs?fmt(pct(x.rs,0))+"%":"—"}</td><td>${x.bm||x.bs?(x.bm?fmt(pct(x.bm,0))+"% main":"")+(x.bm&&x.bs?" · ":"")+(x.bs?fmt(pct(x.bs,0))+"% side":""):"—"}</td></tr>`).join("")}</tbody></table>`:`<p class="sub">Nada en este apartado.</p>`;
   const fresh=newInFormat(cur,chs);
   return `<section>
     <h2>Tecnología por arquetipo</h2>
@@ -408,9 +421,41 @@ function viewTecnologia(){
   <section>
     <h2>Cartas nuevas en el formato</h2>
     <p class="sub">Primera aparición registrada en una lista de top 8 dentro del periodo. El seguimiento empezó el ${fmtDate(D.status?.since)}; antes del ${fmtDate(D.status?.baseline_until)} todo contaba como base.</p>
-    <div class="card">${fresh.length?`<table class="ctable"><thead><tr><th>Carta</th><th>Desde</th><th>Arquetipos</th></tr></thead><tbody>${fresh.map(f=>`<tr><td>${esc(f.card)}</td><td>${fmtDate(f.date)}</td><td style="font-family:var(--body)">${f.archs.map(a=>esc(nameOf(a))).join(", ")}</td></tr>`).join("")}</tbody></table>`:`<p class="sub">Ninguna en este periodo.</p>`}</div>
+    <div class="card">${fresh.length?`<table class="ctable"><thead><tr><th>Carta</th><th>Desde</th><th>Arquetipos</th></tr></thead><tbody>${fresh.map(f=>`<tr><td>${cardBtn(f.card)}</td><td>${fmtDate(f.date)}</td><td style="font-family:var(--body)">${f.archs.map(a=>esc(nameOf(a))).join(", ")}</td></tr>`).join("")}</tbody></table>`:`<p class="sub">Ninguna en este periodo.</p>`}</div>
   </section>`;
 }
+const cardBtn=n=>`<button class="cardlink" data-card="${esc(n)}">${esc(n)}</button>`;
+/* ---------- visor de cartas (imágenes de Scryfall) ---------- */
+const CARDS={};let VIEW=null;
+async function cardInfo(name){
+  if(CARDS[name])return CARDS[name];
+  const front=name.split(" // ")[0];
+  const q=async(mode,v)=>{const r=await fetch(`https://api.scryfall.com/cards/named?${mode}=${encodeURIComponent(v)}`);if(!r.ok)throw new Error(r.status);return r.json()};
+  let c;try{c=await q("exact",front)}catch(e){c=await q("fuzzy",front)}
+  const faces=c.image_uris?[c.image_uris.normal]:(c.card_faces||[]).map(f=>f.image_uris&&f.image_uris.normal).filter(Boolean);
+  if(!faces.length)throw new Error("sin imagen");
+  return CARDS[name]={faces,url:c.scryfall_uri,artist:c.artist||(c.card_faces&&c.card_faces[0].artist)||""};
+}
+function openCard(name){
+  closeCard();
+  const v=document.createElement("div");v.className="viewer";v.id="viewer";v.setAttribute("role","dialog");v.setAttribute("aria-modal","true");v.setAttribute("aria-label",name);
+  v.innerHTML=`<div class="vname"></div><div class="vimg"><div class="vmsg">Cargando…</div></div><div class="vbar"><button class="vbtn" id="v-flip" hidden>Girar</button><a class="vbtn" id="v-link" target="_blank" rel="noopener" hidden>Ver en Scryfall</a><button class="vbtn" id="v-close">Cerrar</button></div><div class="vcredit">Imagen: Scryfall · Magic: The Gathering © Wizards of the Coast</div>`;
+  v.querySelector(".vname").textContent=name;
+  document.body.appendChild(v);document.body.style.overflow="hidden";
+  VIEW={name,face:0,el:v,prev:document.activeElement};
+  v.querySelector("#v-close").focus();
+  cardInfo(name).then(info=>{if(!VIEW||VIEW.name!==name)return;VIEW.info=info;showFace();
+    const l=v.querySelector("#v-link");l.href=info.url;l.hidden=!info.url;v.querySelector("#v-flip").hidden=info.faces.length<2;
+    if(info.artist)v.querySelector(".vcredit").textContent=`Ilustración: ${info.artist} · Imagen: Scryfall · Magic: The Gathering © Wizards of the Coast`;
+  }).catch(()=>{if(!VIEW||VIEW.name!==name)return;v.querySelector(".vimg").innerHTML='<div class="vmsg"></div>';v.querySelector(".vmsg").textContent=`No se ha podido cargar la imagen de ${name}. Comprueba la conexión y vuelve a tocar la carta.`});
+}
+function showFace(){
+  const box=VIEW.el.querySelector(".vimg"),src=VIEW.info.faces[VIEW.face];
+  box.innerHTML='<div class="vmsg">Cargando…</div>';
+  const img=new Image();img.alt=VIEW.name;img.onload=()=>{box.innerHTML="";box.appendChild(img)};img.onerror=()=>{box.querySelector(".vmsg").textContent="No se ha podido cargar la imagen. Comprueba la conexión."};img.src=src;
+}
+function closeCard(){if(!VIEW)return;VIEW.el.remove();document.body.style.overflow="";const p=VIEW.prev;VIEW=null;p&&p.focus&&p.focus({preventScroll:true})}
+document.addEventListener("keydown",e=>{if(e.key==="Escape"&&VIEW)closeCard()});
 const BASICS=new Set(["Plains","Island","Swamp","Mountain","Forest","Wastes"]);
 const isBasic=c=>BASICS.has(c)||c.startsWith("Snow-Covered ");
 function isNewInFormat(card,cur){const f=D.cardIdx[card];return f&&cur.includes(f)&&D.status?.baseline_until&&f>=D.status.baseline_until}
@@ -429,6 +474,7 @@ function viewAlertas(){
       <div class="meta">${seen&&(a.created||"")>seen?'<span class="dot" title="Nueva desde tu última visita"></span>':""}<span class="kind" style="color:var(--sev-${esc(a.sev)})">${esc(KIND[a.type]||a.type)}</span><span>${fmtDate(a.date)}</span>${a.ch?`<span>${esc(String(a.ch).split("+").map(chLabel).join(" + "))}</span>`:""}</div>
       <div class="title">${a.arch?pips(a.arch):""}${esc(a.title)}</div>
       <div class="det">${esc(a.detail)}</div>
+      ${(()=>{const cs=a.cards&&a.cards.length?a.cards:(a.card?[a.card]:[]);return cs.length?`<div class="cchips">${cs.map(cardBtn).join("")}</div>`:""})()}
       ${a.arch&&a.arch!=="other"?`<div><button class="linkbtn" data-goto-tech="${esc(a.arch)}">Ver la tecnología de ${esc(nameOf(a.arch))} →</button></div>`:""}
     </article>`).join(""):`<div class="empty">No hay alertas de este tipo todavía.</div>`}</div>
   </section>`;
@@ -452,7 +498,9 @@ function render(){
 function setTab(t){if(S.tab==="alertas"&&t!=="alertas")markSeen();S.tab=t;LS.set("ms_tab",t);try{history.replaceState(null,"","#"+t)}catch(e){}render();window.scrollTo({top:0})}
 function markSeen(){const mx=D.alerts.reduce((m,a)=>(a.created||"")>m?a.created:m,"");if(mx)LS.set("ms_seen",mx)}
 document.addEventListener("click",ev=>{
+  if(VIEW){if(ev.target.closest("#v-close")||ev.target===VIEW.el){closeCard();return}if(ev.target.closest("#v-flip")){VIEW.face=(VIEW.face+1)%VIEW.info.faces.length;showFace();return}if(ev.target.closest("#v-link"))return;return}
   const t=ev.target.closest("button,a");if(!t)return;
+  if(t.dataset.card){openCard(t.dataset.card);return}
   if(t.closest("#f-ch")){S.ch=t.dataset.v;LS.set("ms_ch",S.ch);render();return}
   if(t.closest("#f-win")){S.win=+t.dataset.v;LS.set("ms_win",S.win);render();return}
   if(t.dataset.tab){ev.preventDefault();setTab(t.dataset.tab);return}

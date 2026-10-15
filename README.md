@@ -17,3 +17,5 @@ sobre las 6:00 (hora de Madrid).
 - `data/`: histórico por día (`days/`), listas agregadas (`cards/`), índices, matriz de cruces,
   alertas y los ficheros que lee la app (`core.json`, `cards-recent.json`).
 - `tools/`: procesado (`pipeline.py`) e instrucciones de la actualización diaria (`RUN.md`, `COLLECT.md`).
+
+Las imágenes de las cartas se cargan desde [Scryfall](https://scryfall.com). Magic: The Gathering y sus imágenes son © Wizards of the Coast; esta app es contenido de fans sin ánimo de lucro.
