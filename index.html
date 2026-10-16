@@ -314,7 +314,7 @@ function viewMeta(){
   </section>
   <section>
     <h2>Meta actual</h2>
-    <p class="sub">Últimos ${S.win} días hasta el ${fmtDate(end)} · ${S.ch==="all"?"papel y MTGO":chLabel(S.ch)}. La flecha compara con los ${S.win} días anteriores, en puntos. El % de victoria sale de los récords de cada deck contra todo el campo; en verde o rojo solo si la diferencia con el 50% es clara.</p>
+    <p class="sub">${(()=>{const sp=(a,b,sep)=>a.slice(0,7)===b.slice(0,7)?`${+a.slice(8)}${sep}${fmtDate(b)}`:`${fmtDate(a)}${sep}${fmtDate(b)}`;return `Del ${sp(cur[0],end," al ")} (${S.win} días) · ${S.ch==="all"?"papel y MTGO":chLabel(S.ch)}. La flecha indica cuántos puntos sube o baja la cuota frente a los ${S.win} días anteriores (${sp(prev[0],prev[prev.length-1],"–")}).`})()} El % de victoria se calcula con los récords de cada deck; se marca en verde o rojo solo cuando se aleja claramente del 50%.</p>
     <div class="board" role="list">
       <div class="bhead"><span>Arquetipo</span><span>Cuota</span><span>Top ${S.top}</span><span>Victoria</span></div>
       ${rowsHtml}
