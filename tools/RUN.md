@@ -25,6 +25,13 @@ Fecha de hoy en Madrid = H. Procesa las 3 fechas anteriores: H-3, H-2 y H-1.
 Escribe los ficheros de `data/` (incluidos `core.json` y `cards-recent.json`, que lee la app)
 y el resumen en `R/.run/summary.md`.
 
+Después, las listas medias de los Meta Decks del Game Tracker (lee `data/cards` y escribe
+`data/meta-decks.json`):
+
+`python3 -I R/tools/lists.py --data R/data --today H`
+
+Si este paso falla, sigue con la publicación y menciona el fallo en el aviso.
+
 ## 4. Publicación
 ```
 cd R
