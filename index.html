@@ -148,6 +148,7 @@ table.mx{border-collapse:separate;border-spacing:2px;font-size:12px;margin:6px}
 .ctable td{padding:5px 6px;border-bottom:1px solid var(--line);text-align:right;font-family:var(--mono);font-variant-numeric:tabular-nums;font-size:12px}
 .ctable td:first-child{font-family:var(--body);font-size:13px}
 .ctable tr:last-child td{border-bottom:0}
+.ctable tr.grp td{border-top:1px solid var(--line)}
 .tag{font:600 10px var(--body);letter-spacing:.06em;text-transform:uppercase;border-radius:4px;padding:1px 5px;margin-left:6px;vertical-align:1px}
 .tag.new{background:var(--accent);color:var(--accent-ink)}
 .tag.side{background:var(--sunk);color:var(--ink-2)}
@@ -193,7 +194,7 @@ table.mx{border-collapse:separate;border-spacing:2px;font-size:12px;margin:6px}
       <h1>Meta Standard <small>grupo de testeo</small></h1>
       <span class="stamp" id="stamp">Cargando datos…</span>
     </div>
-    <div class="filters">
+    <div class="filters" id="filters">
       <div class="seg" role="group" aria-label="Canal" id="f-ch">
         <button id="ch-all" data-v="all" aria-pressed="true">Papel + MTGO</button>
         <button id="ch-paper" data-v="paper" aria-pressed="false">Papel</button>
@@ -215,6 +216,7 @@ table.mx{border-collapse:separate;border-spacing:2px;font-size:12px;margin:6px}
       <a href="#tendencias" data-tab="tendencias">Tendencias</a>
       <a href="#tecnologia" data-tab="tecnologia">Tecnología</a>
       <a href="#alertas" data-tab="alertas">Alertas <span class="badge" id="abadge" hidden>0</span></a>
+      <a href="#local" data-tab="local">Local</a>
     </nav>
   </div>
 </header>
@@ -225,7 +227,7 @@ table.mx{border-collapse:separate;border-spacing:2px;font-size:12px;margin:6px}
 <script>
 (function(){
 "use strict";
-const S={ch:"all",win:14,top:8,tab:"meta",open:null,showAll:false,techArch:null,afilter:"all"};
+const S={ch:"all",win:14,top:8,tab:"meta",open:null,showAll:false,techArch:null,afilter:"all",ldays:90};
 const D={days:{},cards:{},archIdx:{},cardIdx:{},cardIdx16:{},matrix:null,status:null,alerts:[],ready:false,cardsReady:false};
 const $=s=>document.querySelector(s);
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -495,6 +497,60 @@ function viewAlertas(){
 }
 const emptyBlock=t=>`<div class="empty">${esc(t)}</div>`;
 
+/* ---------- local: partidas del grupo subidas al Game Tracker ----------
+   Datos aparte de los de Spellbinder: no se mezclan ni se comparan. Solo totales por
+   arquetipo de perfiles públicos (función local_meta de Supabase), sin nombres ni listas. */
+const LOCAL_API="https://dnfbfmtzjjncsiguxohd.supabase.co/rest/v1/rpc/local_meta";
+const LOCAL_KEY="sb_publishable_VvFaJtsRDeRjgadol7fRfQ_qB9zxsQu";
+const L={data:{},loading:{},error:{}};
+const lkey=d=>String(d??"all");
+async function loadLocal(days,force){
+  const k=lkey(days);if(L.loading[k]||(L.data[k]&&!force&&Date.now()-L.data[k].at<5*60*1000))return;
+  if(!L.data[k]){const c=LS.get("ms_local_"+k,null);if(c)L.data[k]={...c,at:0}}
+  L.loading[k]=true;L.error[k]=false;
+  try{
+    const r=await fetch(LOCAL_API,{method:"POST",headers:{"apikey":LOCAL_KEY,"Content-Type":"application/json"},body:JSON.stringify({p_days:days})});
+    if(!r.ok)throw new Error("HTTP "+r.status);
+    const j=await r.json();L.data[k]={j,at:Date.now()};LS.set("ms_local_"+k,{j});
+  }catch(e){L.error[k]=true}
+  L.loading[k]=false;if(S.tab==="local")render();
+}
+const lslug=n=>String(n).toLowerCase().replace(/[^a-z0-9]+/g,"-");
+const lpips=n=>{const s=lslug(n);let c=[];for(const k of Object.keys(GUILD).sort((a,b)=>b.length-a.length))if(s.startsWith(k)||s.startsWith(k.replace("-",""))){c=GUILD[k].split("");break}
+  c.sort((a,b)=>order.indexOf(a)-order.indexOf(b));return c.length?`<span class="pips" aria-hidden="true">${c.map(x=>`<i class="pip ${x}"></i>`).join("")}</span>`:""};
+const rec=o=>o.d?`${o.w}-${o.l}-${o.d}`:`${o.w}-${o.l}`;
+const lwr=(w,n)=>n?fmt(pct(w/n,0))+"%":"—";
+function viewLocal(){
+  const k=lkey(S.ldays),e=L.data[k],j=e&&e.j;
+  const opts=[[30,"30 días"],[90,"90 días"],[null,"Todo"]];
+  const seg=`<div class="seg" role="group" aria-label="Periodo local" id="f-ld">${opts.map(([v,l])=>`<button data-ld="${v??"all"}" aria-pressed="${S.ldays===v}">${l}</button>`).join("")}</div>`;
+  const intro=`<p class="sub">Partidas que el grupo sube al Game Tracker. Son datos aparte de los de Spellbinder: no se mezclan con el resto de pestañas. Solo cuentan los perfiles públicos y se muestran totales por arquetipo, sin nombres de jugadores ni listas.</p>`;
+  let body;
+  if(!j){body=L.error[k]?emptyBlock("No se han podido cargar las partidas del grupo. Comprueba la conexión y vuelve a abrir la pestaña."):emptyBlock("Cargando las partidas del grupo…")}
+  else if(!j.matches){body=emptyBlock(S.ldays?`No hay partidas del grupo en los últimos ${S.ldays} días. Se rellena con lo que subís al Game Tracker.`:"Todavía no hay partidas del grupo. Se rellena con lo que subís al Game Tracker.")}
+  else{
+    const tot={w:0,l:0,d:0};for(const x of j.decks){tot.w+=x.w;tot.l+=x.l;tot.d+=x.d}
+    const N=j.matches;
+    const opp=j.opponents.map(o=>{const n=o.w+o.l+o.d;return`<tr><td>${lpips(o.name)}${esc(o.name)}</td><td>${n}</td><td>${fmt(pct(n/N))}%</td><td>${rec(o)}</td><td>${lwr(o.w,n)}</td></tr>`}).join("");
+    const decks=j.decks.map(o=>{const n=o.w+o.l+o.d,g=o.gw+o.gl+o.gd;return`<tr><td>${lpips(o.name)}${esc(o.name)}</td><td>${o.players}</td><td>${rec(o)}</td><td>${lwr(o.w,n)}</td><td>${lwr(o.gw,g)}</td></tr>`}).join("");
+    const mu=j.matchups.slice().sort((a,b)=>a.deck.localeCompare(b.deck)||(b.w+b.l+b.d)-(a.w+a.l+a.d)||a.opp.localeCompare(b.opp));
+    let last="";const muRows=mu.map(o=>{const n=o.w+o.l+o.d,first=o.deck!==last;last=o.deck;return`<tr${first?' class="grp"':""}><td>${first?lpips(o.deck)+esc(o.deck):""}</td><td style="text-align:left;font-family:var(--body);font-size:13px">${esc(o.opp)}</td><td>${rec(o)}</td><td>${lwr(o.w,n)}</td></tr>`}).join("");
+    body=`<section><div class="kpis">
+      <div class="kpi"><b>${j.players}</b><span>Jugadores</span></div>
+      <div class="kpi"><b>${j.events}</b><span>Eventos</span></div>
+      <div class="kpi"><b>${N}</b><span>Rondas</span></div>
+      <div class="kpi"><b>${lwr(tot.w,N)}</b><span>Victoria del grupo</span></div>
+    </div><p class="foot">Del ${fmtDate(j.from)} al ${fmtDate(j.to)}. Una ronda cuenta como ganada si se ganan más games de los que se pierden.</p></section>
+    <section><h2>Meta local</h2><p class="sub">Arquetipos contra los que habéis jugado, cuántas veces y vuestro resultado contra ellos.</p>
+      <div class="card"><table class="ctable"><thead><tr><th>Rival</th><th>Rondas</th><th>Cuota</th><th>Récord</th><th>Victoria</th></tr></thead><tbody>${opp}</tbody></table></div></section>
+    <section><h2>Nuestros decks</h2><p class="sub">Con qué arquetipos ha jugado el grupo. Victoria por rondas y por games.</p>
+      <div class="card"><table class="ctable"><thead><tr><th>Arquetipo</th><th>Jug.</th><th>Récord</th><th>Rondas</th><th>Games</th></tr></thead><tbody>${decks}</tbody></table></div></section>
+    ${muRows?`<section><h2>Cruces locales</h2><p class="sub">Resultado de cada arquetipo del grupo contra cada rival. Con tan pocas rondas por cruce, tómalo como indicio.</p>
+      <div class="card"><table class="ctable"><thead><tr><th>Nuestro deck</th><th style="text-align:left">Rival</th><th>Récord</th><th>Victoria</th></tr></thead><tbody>${muRows}</tbody></table></div></section>`:""}`;
+  }
+  return `<section><h2>Local</h2>${intro}${seg}</section>${body}`;
+}
+
 /* ---------- render y eventos ---------- */
 function render(){
   for(const b of document.querySelectorAll("#f-ch button"))b.setAttribute("aria-pressed",b.dataset.v===S.ch);
@@ -506,11 +562,13 @@ function render(){
   const seen=LS.get("ms_seen","");const nNew=tierAlerts().filter(a=>(a.created||"")>seen).length;
   const bd=$("#abadge");bd.hidden=!seen||!nNew||S.tab==="alertas";bd.textContent=nNew;
   const v=$("#view");
+  $("#filters").hidden=S.tab==="local";
+  if(S.tab==="local"){v.innerHTML=viewLocal();return}
   if(!D.ready){return}
   if(!Object.keys(D.days).length){v.innerHTML=emptyBlock("Todavía no hay datos. Se cargan con la actualización diaria de las 6:00.");return}
   v.innerHTML={meta:viewMeta,cruces:viewCruces,tendencias:viewTendencias,tecnologia:viewTecnologia,alertas:viewAlertas}[S.tab]();
 }
-function setTab(t){if(S.tab==="alertas"&&t!=="alertas")markSeen();S.tab=t;LS.set("ms_tab",t);try{history.replaceState(null,"","#"+t)}catch(e){}render();window.scrollTo({top:0})}
+function setTab(t){if(S.tab==="alertas"&&t!=="alertas")markSeen();S.tab=t;LS.set("ms_tab",t);try{history.replaceState(null,"","#"+t)}catch(e){}render();window.scrollTo({top:0});if(t==="local")loadLocal(S.ldays)}
 function markSeen(){const mx=D.alerts.reduce((m,a)=>(a.created||"")>m?a.created:m,"");if(mx)LS.set("ms_seen",mx)}
 document.addEventListener("click",ev=>{
   if(VIEW){if(ev.target.closest("#v-close")||ev.target===VIEW.el){closeCard();return}if(ev.target.closest("#v-flip")){VIEW.face=(VIEW.face+1)%VIEW.info.faces.length;showFace();return}if(ev.target.closest("#v-link"))return;return}
@@ -525,14 +583,16 @@ document.addEventListener("click",ev=>{
   if(t.dataset.tech){S.techArch=t.dataset.tech;render();return}
   if(t.dataset.gotoTech){S.techArch=t.dataset.gotoTech;setTab("tecnologia");return}
   if(t.dataset.af){S.afilter=t.dataset.af;render();return}
+  if(t.dataset.ld){S.ldays=t.dataset.ld==="all"?null:+t.dataset.ld;LS.set("ms_ldays",S.ldays);render();loadLocal(S.ldays);return}
 });
 window.addEventListener("pagehide",()=>{if(S.tab==="alertas")markSeen()});
 
 /* ---------- datos ---------- */
 async function boot(){
-  S.ch=LS.get("ms_ch","all");S.win=LS.get("ms_win",14);S.top=LS.get("ms_top",8)===16?16:8;
-  const h=(location.hash||"").slice(1);S.tab=["meta","cruces","tendencias","tecnologia","alertas"].includes(h)?h:LS.get("ms_tab","meta");
+  S.ch=LS.get("ms_ch","all");S.win=LS.get("ms_win",14);S.top=LS.get("ms_top",8)===16?16:8;S.ldays=[30,90,null].includes(LS.get("ms_ldays",90))?LS.get("ms_ldays",90):90;
+  const h=(location.hash||"").slice(1);S.tab=["meta","cruces","tendencias","tecnologia","alertas","local"].includes(h)?h:LS.get("ms_tab","meta");
   render();
+  if(S.tab==="local")loadLocal(S.ldays);
   let lastLoad=0;
   async function loadAll(){
     try{
@@ -553,7 +613,7 @@ async function boot(){
     }
   }
   await loadAll();
-  document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"&&Date.now()-lastLoad>10*60*1000)loadAll()});
+  document.addEventListener("visibilitychange",()=>{if(document.visibilityState!=="visible")return;if(Date.now()-lastLoad>10*60*1000)loadAll();if(S.tab==="local")loadLocal(S.ldays)});
   setupInstall();
 }
 function setupInstall(){

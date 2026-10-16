@@ -1,5 +1,5 @@
 // Service worker de Meta Standard: la app funciona sin conexión con los últimos datos descargados.
-const SHELL = "meta-shell-v3";
+const SHELL = "meta-shell-v4";
 const CARDS = "meta-cards-v1";
 const DATA = "meta-data-v1";
 const SHELL_FILES = ["./", "index.html", "manifest.webmanifest", "icons/icon-192.png", "icons/icon-512.png", "icons/apple-touch-icon.png", "icons/favicon.png"];
