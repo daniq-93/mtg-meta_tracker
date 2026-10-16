@@ -504,7 +504,7 @@ const emptyBlock=t=>`<div class="empty">${esc(t)}</div>`;
 const LOCAL_API="https://dnfbfmtzjjncsiguxohd.supabase.co/rest/v1/rpc/local_stats";
 const LOCAL_KEY="sb_publishable_VvFaJtsRDeRjgadol7fRfQ_qB9zxsQu";
 const L={data:{},loading:{},error:{}};
-const LTYPES=[["store_championship","Store Championship"],["rcq","RCQ"],["regional","Regional Championship"],["casual","Casual"],["pt","Pro Tour"]];
+const LTYPES=[["casual","Casual"],["store_championship","Store"],["rcq","RCQ"],["regional","RC"],["pt","Pro Tour"]];
 const ltypesSel=()=>S.ltypes||LTYPES.map(t=>t[0]);
 const ltypesParam=()=>S.ltypes&&S.ltypes.length<LTYPES.length?S.ltypes:null;
 const lkey=d=>String(d??"all")+"|"+(ltypesParam()||["todos"]).slice().sort().join(",");
@@ -538,15 +538,15 @@ function viewLocal(){
   else if(!j.matches){body=emptyBlock(S.ldays?`No hay partidas del grupo en los últimos ${S.ldays} días. Se rellena con lo que subís al Game Tracker.`:"Todavía no hay partidas del grupo. Se rellena con lo que subís al Game Tracker.")}
   else{
     const tot={w:0,l:0,d:0};for(const x of j.decks){tot.w+=x.w;tot.l+=x.l;tot.d+=x.d}
-    const N=j.matches;
-    const opp=j.opponents.map(o=>{const n=o.w+o.l+o.d;return`<tr><td>${lpips(o.name)}${esc(o.name)}</td><td>${n}</td><td>${fmt(pct(n/N))}%</td><td>${rec(o)}</td><td>${lwr(o.w,n)}</td></tr>`}).join("");
+    const N=tot.w+tot.l+tot.d,NO=j.opponents.reduce((a,o)=>a+o.w+o.l+o.d,0)||1;
+    const opp=j.opponents.map(o=>{const n=o.w+o.l+o.d;return`<tr><td>${lpips(o.name)}${esc(o.name)}</td><td>${n}</td><td>${fmt(pct(n/NO))}%</td><td>${rec(o)}</td><td>${lwr(o.w,n)}</td></tr>`}).join("");
     const decks=j.decks.map(o=>{const n=o.w+o.l+o.d,g=o.gw+o.gl+o.gd;return`<tr><td>${lpips(o.name)}${esc(o.name)}</td><td>${o.players}</td><td>${rec(o)}</td><td>${lwr(o.w,n)}</td><td>${lwr(o.gw,g)}</td></tr>`}).join("");
     const mu=j.matchups.slice().sort((a,b)=>a.deck.localeCompare(b.deck)||(b.w+b.l+b.d)-(a.w+a.l+a.d)||a.opp.localeCompare(b.opp));
     let last="";const muRows=mu.map(o=>{const n=o.w+o.l+o.d,first=o.deck!==last;last=o.deck;return`<tr${first?' class="grp"':""}><td>${first?lpips(o.deck)+esc(o.deck):""}</td><td style="text-align:left;font-family:var(--body);font-size:13px">${esc(o.opp)}</td><td>${rec(o)}</td><td>${lwr(o.w,n)}</td></tr>`}).join("");
     body=`<section><div class="kpis">
       <div class="kpi"><b>${j.players}</b><span>Jugadores</span></div>
       <div class="kpi"><b>${j.events}</b><span>Eventos</span></div>
-      <div class="kpi"><b>${N}</b><span>Rondas</span></div>
+      <div class="kpi"><b>${j.matches}</b><span>Rondas</span></div>
       <div class="kpi"><b>${lwr(tot.w,N)}</b><span>Victoria del grupo</span></div>
     </div><p class="foot">Del ${fmtDate(j.from)} al ${fmtDate(j.to)}. Una ronda cuenta como ganada si se ganan más games de los que se pierden.</p></section>
     <section><h2>Meta local</h2><p class="sub">Arquetipos contra los que habéis jugado, cuántas veces y vuestro resultado contra ellos.</p>
