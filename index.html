@@ -504,7 +504,7 @@ const emptyBlock=t=>`<div class="empty">${esc(t)}</div>`;
 const LOCAL_API="https://dnfbfmtzjjncsiguxohd.supabase.co/rest/v1/rpc/local_stats";
 const LOCAL_KEY="sb_publishable_VvFaJtsRDeRjgadol7fRfQ_qB9zxsQu";
 const L={data:{},loading:{},error:{}};
-const LTYPES=[["store_championship","Store"],["rcq","RCQ"],["regional","Regional"],["casual","Casual"],["pt","Pro Tour"]];
+const LTYPES=[["store_championship","Store Championship"],["rcq","RCQ"],["regional","Regional Championship"],["casual","Casual"],["pt","Pro Tour"]];
 const ltypesSel=()=>S.ltypes||LTYPES.map(t=>t[0]);
 const ltypesParam=()=>S.ltypes&&S.ltypes.length<LTYPES.length?S.ltypes:null;
 const lkey=d=>String(d??"all")+"|"+(ltypesParam()||["todos"]).slice().sort().join(",");
