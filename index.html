@@ -228,7 +228,7 @@ table.mx{border-collapse:separate;border-spacing:2px;font-size:12px;margin:6px}
 <script>
 (function(){
 "use strict";
-const S={ch:"all",win:14,top:8,tab:"meta",open:null,showAll:false,techArch:null,afilter:"all",ldays:90};
+const S={ch:"all",win:14,top:8,tab:"meta",open:null,showAll:false,techArch:null,afilter:"all",ldays:30,ltypes:null};
 const D={days:{},cards:{},archIdx:{},cardIdx:{},cardIdx16:{},matrix:null,status:null,alerts:[],ready:false,cardsReady:false};
 const $=s=>document.querySelector(s);
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -501,16 +501,20 @@ const emptyBlock=t=>`<div class="empty">${esc(t)}</div>`;
 /* ---------- local: partidas del grupo subidas al Game Tracker ----------
    Datos aparte de los de Spellbinder: no se mezclan ni se comparan. Solo totales por
    arquetipo de perfiles públicos (función local_meta de Supabase), sin nombres ni listas. */
-const LOCAL_API="https://dnfbfmtzjjncsiguxohd.supabase.co/rest/v1/rpc/local_meta";
+const LOCAL_API="https://dnfbfmtzjjncsiguxohd.supabase.co/rest/v1/rpc/local_stats";
 const LOCAL_KEY="sb_publishable_VvFaJtsRDeRjgadol7fRfQ_qB9zxsQu";
 const L={data:{},loading:{},error:{}};
-const lkey=d=>String(d??"all");
+const LTYPES=[["store_championship","Store"],["rcq","RCQ"],["regional","Regional"],["casual","Casual"],["pt","Pro Tour"]];
+const ltypesSel=()=>S.ltypes||LTYPES.map(t=>t[0]);
+const ltypesParam=()=>S.ltypes&&S.ltypes.length<LTYPES.length?S.ltypes:null;
+const lkey=d=>String(d??"all")+"|"+(ltypesParam()||["todos"]).slice().sort().join(",");
 async function loadLocal(days,force){
+  if(S.ltypes&&!S.ltypes.length)return;
   const k=lkey(days);if(L.loading[k]||(L.data[k]&&!force&&Date.now()-L.data[k].at<5*60*1000))return;
   if(!L.data[k]){const c=LS.get("ms_local_"+k,null);if(c)L.data[k]={...c,at:0}}
   L.loading[k]=true;L.error[k]=false;
   try{
-    const r=await fetch(LOCAL_API,{method:"POST",headers:{"apikey":LOCAL_KEY,"Content-Type":"application/json"},body:JSON.stringify({p_days:days})});
+    const r=await fetch(LOCAL_API,{method:"POST",headers:{"apikey":LOCAL_KEY,"Content-Type":"application/json"},body:JSON.stringify({p_days:days,p_types:ltypesParam()})});
     if(!r.ok)throw new Error("HTTP "+r.status);
     const j=await r.json();L.data[k]={j,at:Date.now()};LS.set("ms_local_"+k,{j});
   }catch(e){L.error[k]=true}
@@ -523,11 +527,14 @@ const rec=o=>o.d?`${o.w}-${o.l}-${o.d}`:`${o.w}-${o.l}`;
 const lwr=(w,n)=>n?fmt(pct(w/n,0))+"%":"—";
 function viewLocal(){
   const k=lkey(S.ldays),e=L.data[k],j=e&&e.j;
-  const opts=[[30,"30 días"],[90,"90 días"],[null,"Todo"]];
-  const seg=`<div class="seg" role="group" aria-label="Periodo local" id="f-ld">${opts.map(([v,l])=>`<button data-ld="${v??"all"}" aria-pressed="${S.ldays===v}">${l}</button>`).join("")}</div>`;
+  const opts=[[7,"7 días"],[14,"14 días"],[30,"30 días"],[60,"60 días"],[null,"Todo"]];
+  const sel=ltypesSel();
+  const seg=`<div class="filters"><div class="seg" role="group" aria-label="Periodo local" id="f-ld">${opts.map(([v,l])=>`<button data-ld="${v??"all"}" aria-pressed="${S.ldays===v}">${l}</button>`).join("")}</div></div>
+  <div class="chips" role="group" aria-label="Tipos de evento" id="f-lt">${LTYPES.map(([v,l])=>`<button class="chip" data-lt="${v}" aria-pressed="${sel.includes(v)}">${l}</button>`).join("")}</div>`;
   const intro=`<p class="sub">Partidas que el grupo sube al Game Tracker. Son datos aparte de los de Spellbinder: no se mezclan con el resto de pestañas. Solo cuentan los perfiles públicos y se muestran totales por arquetipo, sin nombres de jugadores ni listas.</p>`;
   let body;
-  if(!j){body=L.error[k]?emptyBlock("No se han podido cargar las partidas del grupo. Comprueba la conexión y vuelve a abrir la pestaña."):emptyBlock("Cargando las partidas del grupo…")}
+  if(!sel.length){body=emptyBlock("Elige al menos un tipo de evento.")}
+  else if(!j){body=L.error[k]?emptyBlock("No se han podido cargar las partidas del grupo. Comprueba la conexión y vuelve a abrir la pestaña."):emptyBlock("Cargando las partidas del grupo…")}
   else if(!j.matches){body=emptyBlock(S.ldays?`No hay partidas del grupo en los últimos ${S.ldays} días. Se rellena con lo que subís al Game Tracker.`:"Todavía no hay partidas del grupo. Se rellena con lo que subís al Game Tracker.")}
   else{
     const tot={w:0,l:0,d:0};for(const x of j.decks){tot.w+=x.w;tot.l+=x.l;tot.d+=x.d}
@@ -584,13 +591,14 @@ document.addEventListener("click",ev=>{
   if(t.dataset.tech){S.techArch=t.dataset.tech;render();return}
   if(t.dataset.gotoTech){S.techArch=t.dataset.gotoTech;setTab("tecnologia");return}
   if(t.dataset.af){S.afilter=t.dataset.af;render();return}
-  if(t.dataset.ld){S.ldays=t.dataset.ld==="all"?null:+t.dataset.ld;LS.set("ms_ldays",S.ldays);render();loadLocal(S.ldays);return}
+  if(t.dataset.ld){S.ldays=t.dataset.ld==="all"?null:+t.dataset.ld;LS.set("ms_ldays2",S.ldays);render();loadLocal(S.ldays);return}
+  if(t.dataset.lt){const cur=ltypesSel(),v=t.dataset.lt;let nx=cur.includes(v)?cur.filter(x=>x!==v):[...cur,v];nx=LTYPES.map(x=>x[0]).filter(x=>nx.includes(x));S.ltypes=nx.length===LTYPES.length?null:nx;LS.set("ms_ltypes",S.ltypes);render();loadLocal(S.ldays);return}
 });
 window.addEventListener("pagehide",()=>{if(S.tab==="alertas")markSeen()});
 
 /* ---------- datos ---------- */
 async function boot(){
-  S.ch=LS.get("ms_ch","all");S.win=LS.get("ms_win",14);S.top=LS.get("ms_top",8)===16?16:8;S.ldays=[30,90,null].includes(LS.get("ms_ldays",90))?LS.get("ms_ldays",90):90;
+  S.ch=LS.get("ms_ch","all");S.win=LS.get("ms_win",14);S.top=LS.get("ms_top",8)===16?16:8;S.ldays=[7,14,30,60,null].includes(LS.get("ms_ldays2",30))?LS.get("ms_ldays2",30):30;{const lt=LS.get("ms_ltypes",null);S.ltypes=Array.isArray(lt)?lt.filter(x=>LTYPES.some(t=>t[0]===x)):null}
   const h=(location.hash||"").slice(1);S.tab=["meta","cruces","tendencias","tecnologia","alertas","local"].includes(h)?h:LS.get("ms_tab","meta");
   render();
   if(S.tab==="local")loadLocal(S.ldays);
